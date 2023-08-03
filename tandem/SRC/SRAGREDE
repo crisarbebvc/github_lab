@@ -1,0 +1,1222 @@
+*******************************************************************************
+** 2021-08-18 MEJORA MACROS DE COMPILACION-I
+** HEALTH CHECK BAKOFFICE
+** CLAUDIA ROZO
+** SE INCLUYEN DIRECTIVAS PARA AGREGAR NUEVA COMPLIB5
+
+*? ENV COMMON
+*? SYMBOLS
+*? INSPECT
+*? LINES 52
+*? OPTIMIZE 2
+
+** 2021-08-18 MEJORA MACROS DE COMPILACION-F
+*******************************************************************************
+*BVC009 -I MEJORA MACROS COMPILACION
+? NOBLANK
+? LESS-CODE 1
+*BVC009 -F MEJORA MACROS COMPILACION
+? SQL (PAGES 999)
+? CONSULT $SYSTEM.SYSTEM.COBOLEX0
+
+*#BEGIN-DOC
+***********************************************
+*  Servidor para el Boton Incluir de la pizarra
+*  Detalle de paquete - Op Continuo
+*  Julio 12 de 2014
+***********************************************
+*   Autor        :  Blanca Zubieta
+***********************************************
+*#END-DOC
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. AGREDE.
+*********************************************************************************
+*                             MODIFICACIONES                                    *
+*********************************************************************************
+*08/08/2014 *BVC001  *PROYECTO CUSTODIOS                                        *
+*BLANCA ZUBIETA      *ADICIONAR SACIÓN EXTEMPORANEO PARA PIZARRA DETALLE PAQ    *
+*                    *EN EL DETALLE DE LA PUNTA /FRACCIÓN                       *
+********************************************************************************
+*26-08-2014     *BVC002     *PROYECTO CUSTODIOS                                 *
+*BLANCA ZUBIETA             *AJUSTE POR ACTUALIZACION DE ALGORITMO CAMPO COLATERAL*
+*********************************************************************************
+*24-09-2014     *BVC003     *PROYECTO CUSTODIOS                                 *
+*BLANCA ZUBIETA             *CORRECCION DE ERRORES                              *
+*********************************************************************************
+*03/10/2014 *BVC004   *CUSTODIOS                                                *
+*Claudia Rozo         *Ajuste movimiento valores Neto, vr giro                  *
+*********************************************************************************
+*27/01/2015 *BVC005   *CUSTODIOS                                                *
+*Claudia Rozo         *Ajuste búsqueda oepraciones                              *
+*********************************************************************************
+*19/06/2015 *BVC006  *PROYECTO CUSTODIOS                                        *
+*YENIFER BARAHONA    *MODIFICACION PARA QUE PIZARRA DETALLE PAQUETE INCLUYA OPE-*
+*                    *RACIONES CAMPOS QUE NO ESTA INSERTANDO                    *
+*********************************************************************************
+*12/07/2016 *BVC007  *SIMULTANEAS POR CAMARA                                    *
+*Eduardo Lucero      *Se realiza ajuste para que no se muestren las             *
+*                    *operaciones simultaneas por camara.                       *
+*********************************************************************************
+*26/04/2017 *BVC008  *INET                                                      *
+*Jorge Quiroga Cuz   *Agregar operaciones a paquete                             *
+*********************************************************************************
+*14/12/2021 BVC010   *Estabilización BO                                         *
+*CLAUDIA ROZO        *Se cambia cursor DECU-OPE por DECU-OPE1                   *
+*********************************************************************************
+*21/03/2023 BVC011   *SIMULTANEAS POR TERCEROS                                  *
+*FREDY NIVIA         *PERMITA INCLUIR OPERACIONES AL PAQUETE                    *
+*********************************************************************************
+*
+ ENVIRONMENT DIVISION.
+? SOURCE =LBSRVALL (SRV-CS)
+ INPUT-OUTPUT SECTION.
+ FILE-CONTROL.
+? SOURCE =LBSRVALL (SRV-SL)
+*
+ DATA DIVISION.
+ FILE SECTION.
+? NOLIST
+? SOURCE =LBSRVALL (SRV-FD)
+? LIST
+*
+/
+ WORKING-STORAGE SECTION.
+*------------------------
+*
+ 77 WS-I                         PIC  9(04) COMP.
+? NOLIST
+
+* exec sql CONTROL QUERY INTERACTIVE ACCESS ON end-exec.
+
+? SOURCE =LBSRVALL (SRV-WS)
+? LIST
+ 01 SRV-CODIGO-MODULO            PIC XXX VALUE "CLI".
+*
+ 01  WS-DATE.
+     03  WS-DATE-AA   PIC 9(02).
+     03  WS-DATE-MM   PIC 9(02).
+     03  WS-DATE-DD   PIC 9(02).
+*
+ 01 WS-DATE-HOY.
+    02 WS-DATE-HOY-CH.
+        03  XWS-ANO-HOY.
+            05 WS-ANO-HOY-19     PIC 9(02) VALUE 19.
+            05 WS-ANO-HOY-DIG    PIC 9(02).
+        03 WS-ANO-HOY REDEFINES XWS-ANO-HOY   PIC 9(04).
+        03 WS-MES-HOY        PIC 9(02).
+        03 WS-DIA-HOY        PIC 9(02).
+    02 WS-DATE-HOY-NUM REDEFINES WS-DATE-HOY-CH  PIC 9(08).
+*
+ 01 WE-FECHA-INI-CT.
+    07 FECHA-AA-INI                       PIC  9(4).
+    07 FECHA-MM-INI                       PIC  9(2).
+    07 FECHA-DD-INI                       PIC  9(2).
+
+ 01 WE-FECHA-FIN-CT.
+    07 FECHA-AA-FIN                       PIC  9(4).
+    07 FECHA-MM-FIN                       PIC  9(2).
+    07 FECHA-DD-FIN                       PIC  9(2).
+*
+ 01 W-VAL-TIMEST                          PIC X(26).
+? NOLIST
+? SOURCE =LBSQLERR (WS)
+? SOURCE =LBUSR    (USR-WS)
+? SOURCE =LBTIMESR (WS,LK)
+*BVC001-F
+? SOURCE =LMQFILE  (WS)
+*BVC001-F
+
+*BVC011-I
+ 01 WS-CAMARA              PIC X(01).
+*BVC011-F
+? LIST
+*
+ EXTENDED-STORAGE SECTION.
+*-------------------------
+*    AQUI VAN LOS SOURCE DE LAS TABLAS SQL, AREA DE DATOS.
+*
+? LIST
+
+? SOURCE =LBCTSI   (WS-INV)
+? SOURCE =LBSTSI   (WS-INV)
+? SOURCE =LBSTSIA   (WS-INV)
+? SOURCE =LBACTV   (WS-INV)
+? SOURCE =LBACTVA  (WS-INV)
+*BVC007-I
+? SOURCE =LBCAMARA (WS-INV)
+*BVC007-F
+**************************************************************
+? SOURCE =LMRUTPAQ (ES-SECCION)
+? SOURCE =LMSELODE (WS-CUR-DECOMP-SEL)
+? SOURCE =LMSELODE (WS-CUR-DEVENT-SEL)
+*BVC001-I
+? SOURCE =LMINLOMD (WT)
+? SOURCE =LMDYNPAQ (WS-INV-DYNPAQ,WS-INV-QFILE, WS-FD-DYNPAQ)
+? SOURCE =LBDYN    (DYN-WS-LARGE)
+? SOURCE =FMTRASCU (FRM-FMDYNPAQ)
+*BVC001-F
+? LIST
+*** Aqui van los copy de los formularios
+? SOURCE =LBSRVALL (SRV-FORM1)
+? SOURCE =FMTRASCU (FRM-FMLISTRA,FRM-FMTMPTRA,FRM-FMLISOPE)
+*
+? SOURCE =LBSRVALL (SRV-FORM2)
+? SOURCE =FMTRASCU (INF-FMLISTRA,INF-FMTMPTRA,INF-FMLISOPE)
+*
+? SOURCE =LBSRVALL (SRV-FORM3)
+*
+? SOURCE =LMTRSOCK (WS)
+? SOURCE =LBSRV    (SRV-RCODES, SRV-AGREDE, SRV-CONST)
+*
+? SOURCE =LMALGPAQ (WS)
+*
+? LIST
+*
+ 01 VARIABLES-CONTEXTO.
+    03 WS-COD-PAQUETE-INI                PIC X(18).
+    03 WS-COD-PAQUETE-FIN                PIC X(18).
+    03 WS-FECHA-INI.
+       05 FECHA-AA-INI                   PIC  9(4).
+       05 FECHA-MM-INI                   PIC  9(2).
+       05 FECHA-DD-INI                   PIC  9(2).
+    03 WS-FECHA-FIN.
+       05 FECHA-AA-FIN                   PIC  9(4).
+       05 FECHA-MM-FIN                   PIC  9(2).
+       05 FECHA-DD-FIN                   PIC  9(2).
+    03 XS-HOR-GRA-INI.
+       05 WS-HOR-GRA-INI           PIC X(0026)
+                  VALUE "0001-01-01:00:00:00.000000".
+    03 FILLER REDEFINES  XS-HOR-GRA-INI.
+       05 WS-HOR-GRA-ANO-INI       PIC 9(04).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-MES-INI       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-DIA-INI       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-HOR-INI       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-MIN-INI       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-SEG-INI       PIC 9(02).
+       05 WS-PTO-INI               PIC X(01).
+       05 WS-MILLO-INI.
+          07 WS-CERO-INI           PIC 9(01).
+          07 WS-MILL-INI           PIC 9(05).
+    03 XS-HOR-GRA-FIN.
+       05 WS-HOR-GRA-FIN           PIC X(0026)
+                  VALUE "0001-01-01:00:00:00.000000".
+    03 FILLER REDEFINES  XS-HOR-GRA-FIN.
+       05 WS-HOR-GRA-ANO-FIN       PIC 9(04).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-MES-FIN       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-DIA-FIN       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-HOR-FIN       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-MIN-FIN       PIC 9(02).
+       05 FILLER                   PIC X(01).
+       05 WS-HOR-GRA-SEG-FIN       PIC 9(02).
+       05 WS-PTO-FIN               PIC X(01).
+       05 WS-MILLO-FIN.
+          07 WS-CERO-FIN           PIC 9(01).
+          07 WS-MILL-FIN           PIC 9(05).
+    03 WS-FRACCION-INI             PIC 9(03).
+    03 WS-FRACCION-FIN             PIC 9(03).
+* AGREGAR OPERACIONES
+    03 WS-FECHA-REG.
+       05 FECHA-AA-REG             PIC 9(4).
+       05 FECHA-MM-REG             PIC 9(2).
+       05 FECHA-DD-REG             PIC 9(2).
+    03 WS-FECHA-CUMSAL.
+       05 FECHA-AA-CUMSAL             PIC 9(4).
+       05 FECHA-MM-CUMSAL             PIC 9(2).
+       05 FECHA-DD-CUMSAL             PIC 9(2).
+    03 WS-FECHA-CUMREG.
+       05 FECHA-AA-CUMREG             PIC 9(4).
+       05 FECHA-MM-CUMREG             PIC 9(2).
+       05 FECHA-DD-CUMREG             PIC 9(2).
+
+    03 WS-COD-CORREDOR             PIC 9(3).
+    03 WS-NEMO                     PIC X(12).
+    03 WS-TID-INV                  PIC X(1).
+    03 WS-NIT-INV                  PIC X(15).
+    03 WS-NRO-CTA-DVL-INV          PIC 9(10).
+    03 WS-NRO-FRACC-INI            PIC 9(03).
+    03 WS-NRO-FRACC-FIN            PIC 9(03).
+    03 WS-PUNTA-INI                PIC X(01).
+    03 WS-PUNTA-FIN                PIC X(01).
+    03 WS-MERCADO                  PIC X(02).
+    03 WS-TIPOP                    PIC X(02).
+    03 WS-DEP                      PIC X(03).
+    03 WS-COD-ISIN                 PIC X(12).
+    03 WS-CURSOR                   PIC 9(02).
+    03 WS-PUNTA                    PIC X(01).
+    03 WS-LECTURA                  PIC 9(05).
+    03 WS-ANTIG                    PIC X(01).
+    03 WS-PRECIODEF                PIC 9(15)V9(02).
+*
+ 01 WS-ERROR.
+    03 WS-TEXTO                    PIC  X(10) VALUE "OPERACION ".
+    03 WS-FECHA                    PIC  X(08).
+    03 WS-GUION                    PIC  X(01) VALUE "-".
+    03 WS-FOLIO                    PIC  X(09).
+    03 WS-GUION1                   PIC  X(01) VALUE "-".
+    03 WS-FRACC                    PIC  X(04).
+    03 WS-TEXTO1                   PIC  X(50).
+ 01 WS-MENSAJE1                    PIC  X(115) VALUE SPACES.
+*
+ 01 WK-CURSOR             PIC 9(02).
+ 01 WK-MONTO              PIC 9(15)V9(02).
+ 01 WK-PUNTA              PIC X(01).
+ 01 WK-FRACCION           PIC 9(03).
+ 01 WK-FOLIO              PIC 9(09).
+ 01 WK-HOR-GRA.
+    03 WK-HOR-GRA-OPE     PIC X(026).
+    03 WK-HOR-GRA-FRA     PIC X(03).
+ 01 WK-SECUENCIA          PIC 9(03).
+ 01 WK-FECHA-HOY.
+    03  WK-FECHA-ANO      PIC 9(04).
+    03  WK-FECHA-MES      PIC 9(02).
+    03  WK-FECHA-DIA      PIC 9(02).
+ 01 WK-AFILIADO           PIC 9(03).
+ 01 WK-CUSTODIO           PIC 9(03).
+ 01 WK-FECHAREG           PIC 9(08).
+ 01 WK-FECUMSAL           PIC 9(08).
+ 01 WK-FECUMREG           PIC 9(08).
+ 01 WK-NEMO               PIC X(12).
+ 01 WK-TINVER             PIC X(01).
+ 01 WK-NINVER             PIC X(15).
+ 01 WK-CUENTADVL          PIC 9(10).
+ 01 WK-CANTIDAD           PIC 9(16)V9(02).
+ 01 WK-PRECIO-PROM        PIC S9(16)V9(02).
+ 01 WK-VALOR-BRUTO        PIC S9(16)V9(02).
+ 01 WK-VALOR-COMISION     PIC S9(16)V9(02).
+ 01 WK-VALOR-IVA-COMIS    PIC S9(16)V9(02).
+ 01 WK-VALOR-NETO         PIC S9(16)V9(02).
+ 01 WK-DEP                PIC X(03).
+ 01 WK-TIPOP              PIC X(02).
+ 01 WK-ADMIN                PIC X(03).
+ 01 WK-ISIN               PIC X(12).
+ 01 WK-MERCADO            PIC X(02).
+ 01 WK-MONTO-PROM         PIC S9(15)V9(02).
+ 01 WK-TASA-PROM          PIC 9(3)V9(04).
+ 01 WK-COD-PAQUETE        PIC X(18).
+ 01 WK-LECTURA            PIC 9(05).
+ 01 WK-CONTINUE           PIC X(01).
+ 01 WK-PRECIO             PIC 9(11)V9(04).
+ 01 WK-OPE-FRAC           PIC X(01).
+ 01 WK-ESTCUM             PIC X(03).
+
+ 01 WK-TIPOP-OP           PIC X(01).
+*
+*BVC002 - I
+ 01 WK-COLTR              PIC X(03).
+*BVC002 - F
+
+ 01 SW-COALGPAQ           PIC X(01).
+ 01 SW-PAQUETE            PIC X(01).
+ 01 SW-CUMOPE             PIC X(01).
+ 01 SW-OPERA              PIC X(01).
+ 01 SW-FRACC              PIC X(01).
+ 01 SW-CUMOP              PIC X(01).
+
+*
+ 01 WP-FECHA1.
+    03 WP-FECHA1-DIA      PIC 9(02).
+    03 WP-FECHA1-MES      PIC 9(02).
+    03 WP-FECHA1-ANO      PIC 9(04).
+ 01 WP-FECHA2.
+    03 WP-FECHA2-ANO      PIC 9(04).
+    03 WP-FECHA2-MES      PIC 9(02).
+    03 WP-FECHA2-DIA      PIC 9(02).
+ 01 WP-COD-PAQUETE.
+    05 WP-FECHA           PIC  9(08).
+    05 WP-FIRMA           PIC  9(03).
+    05 WP-CONSECUTIVO     PIC  9(7).
+*BVC001-I
+ 01 WS-NUM-ARCH-DYIDPQ       PIC S9(04).
+ 01 WS-MON-TOTAL             PIC 9(16)V9(2)   COMP.
+*BVC001-F
+*
+
+*BVC004-F
+ 01  WK-MONTO-REG         PIC 9(15)V9(02).
+*BVC004-F
+
+
+ PROCEDURE DIVISION.
+*-----------------
+*
+ SRV-INIT.
+*--------
+*
+* Se abre el archivo de salida $BBD1.DESQFI.QFDYIDPQ
+    MOVE WS-QFILE-DYIDPQ     TO WK-QFILE-NAME
+    MOVE WS-DYNPAQ-LONG      TO WK-QFILE-DATA-LONG.
+    PERFORM ABRIR-ESCRITURA-QFILE THRU ABRIR-ESCRITURA-QFILE-EXIT.
+    MOVE WK-QFILE-NUMBER     TO WS-NUM-ARCH-DYIDPQ.
+*
+  MOVE SRV-CODIGO-MODULO TO MSGEDT-MODULO.
+*
+? LIST
+? SOURCE =LBSRVALL (SRV-PD)
+? SOURCE =LBSRV    (SRV-GOTO-AGREDE)
+*
+*BVC001-I
+? SOURCE =LMQFILE  (PD)
+*BVC001-F
+? SOURCE =LBSQLERR (PD)
+? SOURCE =LBUSR    (USR-PD)
+)
+**********************************************************************
+? SOURCE =LMRUTPAQ (PD-SECCION)
+? SOURCE =LMSELODE (GET-DECOMP-SEL)
+? SOURCE =LMSELODE (GET-DEVENT-SEL)
+? SOURCE =LBCTSI   (KEY-CTSI)
+? SOURCE =LBSTSI   (KEY-STSI)
+? SOURCE =LBSTSIA   (KEY-STSIA)
+? SOURCE =LBACTV   (KEY-ACTV)
+? SOURCE =LBACTVA  (KEY-ACTVA)
+*BVC007-I
+? SOURCE =LBCAMARA (KEY)
+*BVC007-F
+
+
+**********************************************************************
+? SOURCE =LBTIMESR (PD)
+? LIST
+*
+? SOURCE =LMRUTPAQ (EMPBUS)
+? SOURCE =LMRUTPAQ (VALIDA)
+? SOURCE =LMRUTPAQ (REGRESO)
+? SOURCE =LMRUTPAQ (ENVDYN)
+
+*  Procedimientos para guardar y recuperar el contexto
+*
+ AGREDE-RESCATA-CONTEXTO.
+*------------------------
+     MOVE 1  TO SRV-USR-KEY.
+     PERFORM SRV-USR-GET.
+     MOVE SRV-USR-DATA TO VARIABLES-CONTEXTO.
+*
+ AGREDE-GUARDA-CONTEXTO.
+*-----------------------
+     MOVE 1 TO SRV-USR-KEY.
+     MOVE VARIABLES-CONTEXTO TO SRV-USR-DATA.
+     PERFORM SRV-USR-PUT.
+/
+*-------------------------=======================-----------------------
+ AGREDE-RUTINAS-SERVICIO SECTION.
+*--------------------------------
+*
+*----------------------------------------------------------------------------------------*
+*********** TRANSACCIONES PARA BUSCAR OPERACIONES PARA INCLUIR EN UN PAQUETE *************
+*----------------------------------------------------------------------------------------*
+*
+ SRV-R-BUSCDE-PRI.
+*----------------
+*#BEGIN-DOC
+*
+     IF SRV-INPUT-FRM-CODE NOT = FRM-CODE-FMTMPTRA
+        GO TO SRV-ERROR-FORMULARIO
+     END-IF
+
+
+*
+       PERFORM SQL-DETR-CAMPO-INI.
+       PERFORM SQL-DEFR-CAMPO-INI.
+     PERFORM SRV-USR-GET-USER-CODE.
+
+     MOVE   SQL-TIMEST-MINIMO           TO  WS-HOR-GRA-INI
+     MOVE   SQL-TIMEST-MAXIMO           TO  WS-HOR-GRA-FIN
+
+     MOVE   FRM-FMTMPTRA-AFILIADO       TO  WS-COD-CORREDOR
+     MOVE   FRM-FMTMPTRA-MERCADO        TO  WS-MERCADO
+     MOVE   FRM-FMTMPTRA-PUNTA          TO  WS-PUNTA
+     MOVE   FRM-FMTMPTRA-TIPOP          TO  WS-TIPOP
+     MOVE   FRM-FMTMPTRA-DEP            TO  WS-DEP
+     MOVE   FRM-FMTMPTRA-ISIN           TO  WS-COD-ISIN
+
+     MOVE   FRM-FMTMPTRA-FECUMSAL       TO  WS-FECHA-CUMSAL
+     MOVE   FRM-FMTMPTRA-FECUMREG       TO  WS-FECHA-CUMREG
+
+     MOVE   FRM-FMTMPTRA-NEMO           TO  WS-NEMO
+     MOVE   FRM-FMTMPTRA-TINVER         TO  WS-TID-INV
+     MOVE   FRM-FMTMPTRA-NINVER         TO  WS-NIT-INV
+     MOVE   1                           TO  WS-NRO-FRACC-INI
+
+
+     MOVE   SRV-ANO-8                   TO  WK-FECHA-ANO
+     MOVE   SRV-MES                     TO  WK-FECHA-MES
+     MOVE   SRV-DIA                     TO  WK-FECHA-DIA
+
+     PERFORM BUSCA-PKET     THRU  BUSCA-PKET-FIN
+
+     MOVE    0     TO  WS-LECTURA
+*     MOVE SPACES   TO  WK-ACTRE-PUNTA
+     PERFORM AGREDE-GUARDA-CONTEXTO.
+*
+ SRV-R-BUSCDE-SIG.
+*----------------
+*#BEGIN-DOC
+     PERFORM AGREDE-RESCATA-CONTEXTO.
+
+
+     MOVE  WS-PUNTA    TO  WK-PUNTA
+* BVC003 I
+*     MOVE  WS-LECTURA  TO  WK-LECTURA
+* BVC003 F
+     PERFORM FIRST-DEUDA THRU FIRST-DEUDA-FIN.
+*
+ BUSCDE-LISSIG-LOOP.
+*------------------*
+
+   MOVE  WS-CURSOR   TO  WK-CURSOR
+   MOVE  WS-PUNTA    TO  WK-PUNTA
+* BVC003 I
+*   MOVE  WS-LECTURA  TO  WK-LECTURA
+* BVC003 F
+   PERFORM LOOP-DEUDA THRU LOOP-DEUDA-FIN.
+
+ BUSCDE-LISSIG-FIN.
+*------------------
+     IF NOT SQL-SUCCESSFUL
+        MOVE SRV-RCODE-FINSEQ TO SRV-OUTPUT-RCODE
+     ELSE
+        MOVE SRV-RCODE-ACK          TO  SRV-OUTPUT-RCODE
+        MOVE DETR-D-HOR-GRA      TO  WS-HOR-GRA-INI
+        MOVE   1                 TO  WS-NRO-FRACC-INI
+*
+        IF WK-OPE-FRAC = "S"
+           MOVE   DEFR-D-SECUENCIA    TO  WS-NRO-FRACC-INI
+        END-IF
+     END-IF
+     MOVE    WK-CURSOR   TO  WS-CURSOR
+* BVC003 I
+*     MOVE    WK-LECTURA  TO  WS-LECTURA
+* BVC003 F
+     PERFORM AGREDE-GUARDA-CONTEXTO.
+
+     MOVE FRM-CODE-FMLISOPE   TO SRV-OUTPUT-FRM-CODE.
+     GO TO SRV-SEND.
+*******************************************************************************************
+*                         TRANSACCIONES CONTINUO
+*******************************************************************************************
+*
+ FIRST-DEUDA.
+*---------------
+* BVC003 I
+*     IF WK-LECTURA = 1
+*         MOVE     1               TO    WS-NRO-FRACC-INI
+*         MOVE  SQL-TIMEST-MINIMO  TO    WS-HOR-GRA-INI
+*         MOVE  SQL-TIMEST-MAXIMO  TO    WS-HOR-GRA-FIN
+*         MOVE     2               TO    WK-LECTURA
+*     ELSE
+        MOVE ALL NODATA-CHR         TO   FRM-BUFFER-FMLISOPE
+        MOVE  ZERO TO WS-I
+*     END-IF
+* BVC003 F
+     MOVE   WS-HOR-GRA-INI       TO   DETR-D-HOR-GRA-INI
+     MOVE   WS-HOR-GRA-FIN       TO   DETR-D-HOR-GRA-FIN
+     MOVE   WS-NEMO              TO   DETR-D-NEMO
+     MOVE   WS-DEP               TO   DETR-D-UBICACION
+     IF WK-PUNTA = "C"
+        MOVE   WS-COD-CORREDOR     TO   DETR-D-COD-CORR-COM
+        MOVE 1                     TO   WS-CURSOR
+     ELSE
+        MOVE   WS-COD-CORREDOR     TO   DETR-D-COD-CORR-VEN
+        MOVE 2                     TO   WS-CURSOR
+     END-IF
+
+     MOVE  WS-NRO-FRACC-INI    TO   WK-SECUENCIA
+
+     MOVE  WS-FECHA-CUMSAL      TO DETR-D-FECHA-ENTREGA
+     IF WS-TIPOP = "R"
+        MOVE   WS-FECHA-CUMREG  TO DETR-D-FECHAREPO
+     END-IF
+*MUEVE DATOS DEL PAQUETE.
+     MOVE  WK-AFILIADO         TO   FRM-FMLISOPE-AFILIADO
+     MOVE  WK-CUSTODIO         TO   FRM-FMLISOPE-CUSTODIO
+     MOVE  WK-ADMIN            TO   FRM-FMLISOPE-ADMIN
+     MOVE  WK-NEMO             TO   FRM-FMLISOPE-NEMO
+     MOVE  WK-PUNTA            TO   FRM-FMLISOPE-PUNTA
+     MOVE  WK-ISIN             TO   FRM-FMLISOPE-ISIN
+     MOVE  WK-TINVER           TO   FRM-FMLISOPE-TINVER
+     MOVE  WK-NINVER           TO   FRM-FMLISOPE-NINVER
+     MOVE  WK-DEP              TO   FRM-FMLISOPE-DEP
+     MOVE  WK-COD-PAQUETE      TO   FRM-FMLISOPE-CODPAQ
+     MOVE  WK-TIPOP            TO   FRM-FMLISOPE-TIPOP
+     MOVE  WK-MERCADO          TO   FRM-FMLISOPE-MERCADO
+
+*BVC002 - I
+     MOVE  WK-COLTR            TO   FRM-FMLISOPE-COLTR
+*BVC002 - F
+
+     EVALUATE WS-CURSOR
+     WHEN 1
+       PERFORM SQL-DECOMP-SEL-GET-FIRST THRU SQL-DECOMP-SEL-GET-FIRST-EXIT
+       GO TO BUSCDE-LISSIG-LOOP
+     WHEN 2
+       PERFORM SQL-DEVENT-SEL-GET-FIRST THRU SQL-DEVENT-SEL-GET-FIRST-EXIT
+       GO TO BUSCDE-LISSIG-LOOP
+     END-EVALUATE.
+
+ FIRST-DEUDA-FIN.
+*-------------------
+ EXIT.
+
+ LOOP-DEUDA.
+*---------------
+
+
+  IF NOT SQL-SUCCESSFUL
+* BVC003 I
+*      COMPUTE WK-LECTURA = WK-LECTURA + 1
+*      IF WK-LECTURA = 1
+*         MOVE WS-CURSOR     TO WK-CURSOR
+*         MOVE WK-LECTURA    TO WS-LECTURA
+*         PERFORM AGREDE-GUARDA-CONTEXTO
+*      ELSE
+         GO TO BUSCDE-LISSIG-FIN
+*      END-IF
+* BVC003 F
+  END-IF
+
+
+*BVC005-I
+*     ADD 1 TO WS-I
+*BVC005-F
+     MOVE  "S"   TO   WK-CONTINUE
+     MOVE  "N"   TO   WK-OPE-FRAC
+     IF WS-I > 10
+        GO TO BUSCDE-LISSIG-FIN
+     END-IF
+*
+* BVC008-INI
+  IF DETR-D-PROCESOS(23:1) EQUAL "N"
+     PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+  END-IF
+* BVC008-FIN
+
+     IF WK-CONTINUE = "S"
+*BVC011-I
+        MOVE "N"                TO WS-CAMARA
+*BVC011-F
+* BVC007-I
+        IF DETR-D-TIPOTRA = "T"
+           MOVE DETR-D-HOR-GRA    TO   CAMARA-D-HOR-GRA
+           PERFORM SQL-CAMARA-KEY THRU SQL-CAMARA-KEY-EXIT
+           IF SQL-SUCCESSFUL
+*BVC011-I
+*                     PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+              MOVE "S"             TO WS-CAMARA
+              IF CAMARA-D-ORIGEN = "P"
+                 PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+              END-IF
+*BVC011-F
+           END-IF
+            END-IF
+* BVC007-F
+*
+        MOVE  SPACES   TO   WK-TIPOP-OP
+        MOVE DETR-D-TIPOTRA  TO WK-TIPOP-OP
+*BVC011-I
+* SE LE CAMBIA EL VALOR PARA POR QUE ES SIMULTANEA PO TERCEROS
+       IF WS-CAMARA = "S"
+          MOVE "W"  TO WK-TIPOP-OP
+       END-IF
+*BVC011-F
+        IF WK-TIPOP-OP  NOT =  FRM-FMLISOPE-TIPOP
+           PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+        ELSE
+           CONTINUE
+        END-IF
+
+*VALIDA FECHA DE CUMPLIMIENTO OP DE REGRESO
+        IF DETR-D-TIPOTRA = "R"
+           IF DETR-D-FECHAREPO NOT  =  WK-FECUMREG
+              PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+           END-IF
+        ELSE
+           IF DETR-D-TIPOTRA NOT = "N"
+              PERFORM VAL-FECCUMP-REG-DE  THRU VAL-FECCUMP-REG-DE-EXIT
+              IF DETR-D-FECHA-ENTREGA NOT =  WK-FECUMREG
+                 PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+              ELSE
+                 MOVE DETR-SAVE-REG   TO DETR-REG
+                 CONTINUE
+              END-IF
+            END-IF
+
+*VALIDA ISIN DE LA OPERACION  CONTRA ISIN DEL PAQUETE:
+*BVC002 - I
+*       MOVE   DETR-D-HOR-GRA       TO   DECU-D-HOR-GRA
+*       MOVE   WK-PUNTA             TO   DECU-D-TIPO
+*       MOVE   ZEROS                TO   DECU-D-NRO-CUPON
+*       MOVE   1                    TO   DECU-D-SECUENCIA
+*       MOVE   "DP"                 TO   DECU-D-MERCADO
+*       PERFORM SQL-DECU-KEY THRU SQL-DECU-KEY-EXIT
+
+*BVC010-I
+        MOVE DETR-D-HOR-GRA  TO DECU-D-HOR-GRA
+        PERFORM SQL-DECU-OPE1-GET-FIRST THRU SQL-DECU-OPE1-GET-FIRST-EXIT
+
+*        MOVE DETR-D-HOR-GRA  TO DECU-D-HOR-GRA-INI
+*                                DECU-D-HOR-GRA-FIN
+*        PERFORM SQL-DECU-OPE-GET-FIRST THRU SQL-DECU-OPE-GET-FIRST-EXIT
+*BVC010-F
+
+*BVC002 - F
+       IF SQL-SUCCESSFUL
+          IF DECU-D-COD-ISIN NOT = WK-ISIN
+           PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+          ELSE
+             CONTINUE
+          END-IF
+       END-IF
+
+*VALIDA INVERSIONISTAS PARA LA PUNTA DEL PAQUETE
+       EVALUATE  WS-CURSOR
+           WHEN 1
+               MOVE DETR-D-HOR-GRA  TO DEFR-D-HOR-GRA
+               MOVE "C"             TO DEFR-D-TIPO
+               IF DETR-D-FRACC-COMPRA = 0
+                  MOVE  0   TO DEFR-D-SECUENCIA
+                  PERFORM SQL-DEFR-KEY THRU SQL-DEFR-KEY-EXIT
+                  IF SQL-SUCCESSFUL
+                     IF DEFR-D-TNIT1 NOT = WK-TINVER AND
+                        DEFR-D-NIT1  NOT = WK-NINVER
+                        PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+                     END-IF
+                  END-IF
+               ELSE
+                  CONTINUE
+               END-IF
+           WHEN 2
+               MOVE DETR-D-HOR-GRA  TO DEFR-D-HOR-GRA
+               MOVE "V"             TO DEFR-D-TIPO
+               IF DETR-D-FRACC-VENTA = 0
+                  MOVE  0   TO DEFR-D-SECUENCIA
+                  PERFORM SQL-DEFR-KEY THRU SQL-DEFR-KEY-EXIT
+                  IF SQL-SUCCESSFUL
+                     IF DEFR-D-TNIT1 NOT = WK-TINVER AND
+                        DEFR-D-NIT1  NOT = WK-NINVER
+                        PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+                     END-IF
+                  END-IF
+               ELSE
+                  CONTINUE
+               END-IF
+       END-EVALUATE
+
+*BVC005-I
+       MOVE   DETR-D-FOLIO                  TO  WK-FOLIO
+
+*       MOVE   DETR-D-FOLIO                  TO  FRM-FMLISOPE-FOLIO (WS-I)
+*                                                WK-FOLIO
+*BVC005-F
+       MOVE   DETR-D-HOR-GRA                TO  WK-HOR-GRA-OPE
+       MOVE   ZEROES                        TO  WK-HOR-GRA-FRA
+       MOVE   DETR-D-PRECIO                 TO  WK-PRECIO
+*---------------MOVER DATOS GENERALES PARA CORRER ALGORITMO------------------
+       MOVE  WK-PUNTA              TO   WK-ALGPAQ-PUNTA
+       MOVE  DETR-D-FECHA-ENTREGA  TO   WK-ALGPAQ-FECCUMP
+       MOVE  WK-FECUMREG           TO   WK-ALGPAQ-FECUMRE
+       MOVE  DETR-D-NEMO           TO   WK-ALGPAQ-NEMO
+       MOVE  WS-COD-PAQUETE-INI    TO   WK-ALGPAQ-CODPAQUE
+       MOVE  WK-ISIN               TO   WK-ALGPAQ-ISIN
+       MOVE  WK-DEP                TO   WK-ALGPAQ-DEPOSITO
+       MOVE  WK-TIPOP-OP           TO   WK-ALGPAQ-TIPO-OPE
+*BVC002 - I
+       MOVE  WK-COLTR              TO   WK-ALGPAQ-COLATERAL
+*BVC002 - F
+
+       IF WK-PUNTA = "C"
+          MOVE   DETR-D-COD-CORR-COM  TO WK-ALGPAQ-COD-FIRMA
+       ELSE
+          MOVE   DETR-D-COD-CORR-VEN  TO WK-ALGPAQ-COD-FIRMA
+       END-IF
+*----------------------------------------------------
+       IF WK-PUNTA = "C"
+          IF DETR-D-FRACC-COMPRA > 0
+             MOVE    "S"     TO  WK-OPE-FRAC
+          ELSE
+             MOVE  0  TO   WK-SECUENCIA
+          END-IF
+       ELSE
+          IF WK-PUNTA = "V"
+             IF DETR-D-FRACC-VENTA > 0
+                MOVE    "S"     TO  WK-OPE-FRAC
+             ELSE
+                MOVE  0  TO   WK-SECUENCIA
+             END-IF
+          END-IF
+       END-IF
+*CANDIDATAS ENTERAS DE DEUDA
+******************************************************************************
+        IF WK-OPE-FRAC = "N"
+           MOVE  DEFR-D-TNIT1             TO  WK-ALGPAQ-TIPO-ID
+           MOVE  DEFR-D-NIT1              TO  WK-ALGPAQ-IDENTIF
+           MOVE   20000101                TO  DETPAQ-D-FEC-PAQUETE-INI
+           MOVE   29991231                TO  DETPAQ-D-FEC-PAQUETE-FIN
+           MOVE   WK-HOR-GRA-OPE          TO  DETPAQ-D-HOR-GRA-INI
+                                              DETPAQ-D-HOR-GRA-FIN
+           MOVE   WK-PUNTA                TO  DETPAQ-D-PUNTA-INI
+                                              DETPAQ-D-PUNTA-FIN
+           MOVE  0                        TO  DETPAQ-D-FRACCION-INI
+                                              DETPAQ-D-FRACCION-FIN
+
+*
+           PERFORM VALIDA-PKTE    THRU   VALIDA-PKTE-FIN
+*
+           PERFORM VALIDA-CUMP    THRU   VALIDA-CUMP-FIN
+*
+           PERFORM LLAMA-COALGPAQ THRU   LLAMA-COALGPAQ-FIN
+           IF SW-COALGPAQ = "N" AND SW-PAQUETE = "N" AND SW-CUMOPE = "N"
+*BVC006-I
+              AND WK-DEP = DETR-D-UBICACION
+*BVC006-F
+*BVC005-I
+               ADD 1 TO WS-I
+               MOVE   WK-FOLIO             TO  FRM-FMLISOPE-FOLIO (WS-I)
+*BVC005-F
+               MOVE   DETR-D-HOR-GRA       TO   FRM-FMLISOPE-HOR-GRA (WS-I)
+*BVC011-I
+*            MOVE   DETR-D-TIPOTRA    TO   FRM-FMLISOPE-TIPO-OPER (WS-I)
+               MOVE   WK-TIPOP-OP        TO   FRM-FMLISOPE-TIPO-OPER (WS-I)
+*BVC011-F
+               MOVE   DETR-D-FECOPE        TO   FRM-FMLISOPE-FEC-REG (WS-I)
+               MOVE   DETR-D-FECHA-ENTREGA TO   FRM-FMLISOPE-FEC-CUMSAL (WS-I)
+               MOVE   DETR-D-CANTIDAD      TO   FRM-FMLISOPE-CANTIDAD (WS-I)
+               MOVE   DETR-D-PRECIO        TO   FRM-FMLISOPE-PRECIO (WS-I)
+               MOVE   DETR-D-MONTO         TO   FRM-FMLISOPE-VALBRUTO (WS-I)
+*BVC006 - I
+                MOVE   ZEROS               TO  FRM-FMLISOPE-VALNET-REG (WS-I)
+                                               FRM-FMLISOPE-ENTPAG-REG (WS-I)
+                MOVE   DETR-D-FECHA-ENTREGA  TO FRM-FMLISOPE-FEC-CUMSAL (WS-I)
+                MOVE   DETR-D-TASA       TO   FRM-FMLISOPE-TASA (WS-I)
+*BVC006-F
+*BVC004-I
+               MOVE ZEROS TO FRM-FMLISOPE-FEC-CUMREG (WS-I)
+*BVC004-F
+
+                       IF WK-PUNTA = "C"
+                          MOVE DEFR-D-NRO-CTA-DVL        TO   FRM-FMLISOPE-CTA-DEP (WS-I)
+                          MOVE DETR-D-COM-COMPRA         TO   FRM-FMLISOPE-COMISION (WS-I)
+                          MOVE DETR-D-VAL-COM-COMPRA     TO   FRM-FMLISOPE-VALCOMIS (WS-I)
+                          MOVE DETR-D-IVA-COM-COMPRA     TO   FRM-FMLISOPE-IVACOMIS (WS-I)
+
+*BVC004-I
+                  IF DETR-D-TIPOTRA NOT = "R"
+                      COMPUTE WK-MONTO  =            DEFR-D-MONTO
+                                                   + DEFR-D-VAL-COMISION
+                                                   + DEFR-D-IVA-COMISION
+                                                   + DEFR-D-TRASLADO
+                                                   + DEFR-D-RETEFUENTE
+                   ELSE
+                     COMPUTE WK-MONTO  =             DEFR-D-MONTO
+                                                   + DEFR-D-VAL-COMISION
+                                                   + DEFR-D-IVA-COMISION
+                  END-IF
+
+*                             IF DETR-D-TIPOTRA NOT = "R"
+*                            COMPUTE WK-MONTO             = DETR-D-MONTO
+*                                                         - DETR-D-VAL-COM-COMPRA
+*                                                         - DETR-D-IVA-COM-COMPRA
+*                                                         + DETR-D-TRASLADO-COM
+*                                                         + DETR-D-RETEFUENTE-COM
+*                         ELSE
+*                            COMPUTE WK-MONTO             = DETR-D-MONTO
+*                                                         - DETR-D-VAL-COM-COMPRA
+*                                                         - DETR-D-IVA-COM-COMPRA
+*                         END-IF
+*BVC004-F
+                          MOVE    WK-MONTO                TO   FRM-FMLISOPE-VALNET-SAL (WS-I)
+*BVC001 - I
+*                         MOVE  DETR-D-NETO-COMPRA        TO   FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                   IF DETR-D-TIPOTRA = "N"
+                                       MOVE ZEROS                TO WS-MON-TOTAL
+                                           MOVE DEFR-D-HOR-GRA       TO DETEXT-D-HOR-GRA
+                                           MOVE "C"                  TO DETEXT-D-TIPO
+                                           MOVE ZEROS     TO DETEXT-D-SECUENCIA
+                                           PERFORM SQL-DETEXT-KEY THRU SQL-DETEXT-KEY
+                                           IF SQL-SUCCESSFUL
+                                              IF DETEXT-D-SOLICITA = "C"
+                                                 COMPUTE WS-MON-TOTAL = DEFR-D-MONTO-NETO + DETEXT-D-SANCION
+                                                 MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                              ELSE
+                                                 COMPUTE WS-MON-TOTAL =  DEFR-D-MONTO-NETO - DETEXT-D-SANCION
+                                                 MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                              END-IF
+                                           ELSE
+                                              MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                           END-IF
+                                   ELSE
+                                       MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                   END-IF
+*BVC001 - F
+                       ELSE
+                          MOVE DEFR-D-NRO-CTA-DVL        TO   FRM-FMLISOPE-CTA-DEP (WS-I)
+                          MOVE DETR-D-COM-VENTA          TO   FRM-FMLISOPE-COMISION (WS-I)
+                          MOVE DETR-D-VAL-COM-VENTA      TO   FRM-FMLISOPE-VALCOMIS (WS-I)
+                          MOVE DETR-D-IVA-COM-VENTA      TO   FRM-FMLISOPE-IVACOMIS (WS-I)
+                              IF DETR-D-TIPOTRA NOT = "R"
+                             COMPUTE WK-MONTO             =  DETR-D-MONTO
+                                                          - DETR-D-VAL-COM-VENTA
+                                                          - DETR-D-IVA-COM-VENTA
+                                                          + DETR-D-TRASLADO-VEN
+                                                          + DETR-D-RETEFUENTE-VEN
+                          ELSE
+                             COMPUTE WK-MONTO             = DETR-D-MONTO
+                                                          - DETR-D-VAL-COM-VENTA
+                                                          - DETR-D-IVA-COM-VENTA
+                          END-IF
+                          MOVE    WK-MONTO               TO   FRM-FMLISOPE-VALNET-SAL (WS-I)
+*BVC001 - I
+*                         MOVE  DETR-D-NETO-VENTA        TO   FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                   IF DETR-D-TIPOTRA = "N"
+                                       MOVE ZEROS                TO WS-MON-TOTAL
+                                           MOVE DEFR-D-HOR-GRA       TO DETEXT-D-HOR-GRA
+                                           MOVE "V"                  TO DETEXT-D-TIPO
+                                           MOVE ZEROS     TO DETEXT-D-SECUENCIA
+                                           PERFORM SQL-DETEXT-KEY THRU SQL-DETEXT-KEY
+                                           IF SQL-SUCCESSFUL
+                                              IF DETEXT-D-SOLICITA = "V"
+                                                 COMPUTE WS-MON-TOTAL = DEFR-D-MONTO-NETO - DETEXT-D-SANCION
+                                                 MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                              ELSE
+                                                 COMPUTE WS-MON-TOTAL =  DEFR-D-MONTO-NETO + DETEXT-D-SANCION
+                                                 MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                              END-IF
+                                           ELSE
+                                              MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                           END-IF
+                                   ELSE
+                                       MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-SAL (WS-I)
+                                   END-IF
+*BVC001 - F
+                       END-IF
+                       PERFORM MOVER-TASA THRU MOVER-TASA-FIN
+                       IF WK-TIPOP-OP  NOT = "N"
+                          PERFORM MOVER-REGRESO-DE THRU MOVER-REGRESO-DE-FIN
+                       END-IF
+              PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+           ELSE
+*BVC005-I
+*              COMPUTE WS-I = WS-I - 1
+*BVC005-F
+              PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+           END-IF
+*FRACCIONES CANDIDATAS RF
+**************************************************************************************
+        ELSE
+           COMPUTE WS-I = WS-I - 1
+           MOVE DETR-D-HOR-GRA   TO   DEFR-D-HOR-GRA
+
+           MOVE WK-PUNTA         TO   DEFR-D-TIPO-INI
+                                      DEFR-D-TIPO-FIN
+           MOVE WK-SECUENCIA     TO   DEFR-D-SECUENCIA-INI
+           MOVE 999              TO   DEFR-D-SECUENCIA-FIN
+           PERFORM SQL-DEFR-OPE-GET-FIRST    THRU SQL-DEFR-OPE-GET-FIRST-EXIT
+
+           PERFORM UNTIL NOT SQL-SUCCESSFUL OR WS-I >= 10
+             ADD    1      TO WS-I
+             MOVE  DEFR-D-TNIT1        TO  WK-ALGPAQ-TIPO-ID
+             MOVE  DEFR-D-NIT1         TO  WK-ALGPAQ-IDENTIF
+             MOVE  WK-HOR-GRA-OPE     TO  DETPAQ-D-HOR-GRA-INI
+                                          DETPAQ-D-HOR-GRA-FIN
+             MOVE  WK-PUNTA           TO  DETPAQ-D-PUNTA-INI
+                                          DETPAQ-D-PUNTA-FIN
+             MOVE   DEFR-D-SECUENCIA   TO  DETPAQ-D-FRACCION-INI
+                                          DETPAQ-D-FRACCION-FIN
+             MOVE   20000101       TO  DETPAQ-D-FEC-PAQUETE-INI
+             MOVE   29991231       TO  DETPAQ-D-FEC-PAQUETE-FIN
+
+*
+             PERFORM VALIDA-PKTE      THRU   VALIDA-PKTE-FIN
+*
+             PERFORM VALIDA-CUMP    THRU   VALIDA-CUMP-FIN
+*
+             PERFORM LLAMA-COALGPAQ   THRU   LLAMA-COALGPAQ-FIN
+             IF SW-COALGPAQ = "N"  AND SW-PAQUETE = "N" AND SW-CUMOPE = "N"
+*BVC006-I
+                AND WK-DEP = DETR-D-UBICACION
+*BVC006-F
+*BVC005-I
+                ADD 1 TO WS-I
+*BVC005-F
+                MOVE   DEFR-D-SECUENCIA     TO   WK-HOR-GRA-FRA
+                MOVE   WK-HOR-GRA           TO   FRM-FMLISOPE-HOR-GRA  (WS-I)
+                MOVE   WK-FOLIO             TO   FRM-FMLISOPE-FOLIO    (WS-I)
+                MOVE   DETR-D-FECOPE        TO   FRM-FMLISOPE-FEC-REG   (WS-I)
+                MOVE   DEFR-D-SECUENCIA     TO   FRM-FMLISOPE-NFRAC    (WS-I)
+*BVC006 - I
+                MOVE   ZEROS             TO   FRM-FMLISOPE-FEC-CUMREG (WS-I)
+                                              FRM-FMLISOPE-VALNET-REG (WS-I)
+                                              FRM-FMLISOPE-ENTPAG-REG (WS-I)
+                MOVE   DETR-D-FECHA-ENTREGA  TO FRM-FMLISOPE-FEC-CUMSAL (WS-I)
+                MOVE   DETR-D-TASA           TO   FRM-FMLISOPE-TASA (WS-I)
+                MOVE   DEFR-D-NRO-CTA-DVL    TO   FRM-FMLISOPE-CTA-DEP (WS-I)
+*BVC006-F
+*BVC002 - I
+*BVC011-I
+*                MOVE   DETR-D-TIPOTRA       TO   FRM-FMLISOPE-TIPO-OPER (WS-I)
+                                 MOVE   WK-TIPOP-OP       TO   FRM-FMLISOPE-TIPO-OPER (WS-I)
+*BVC011-F
+*BVC002 - F
+                MOVE   DEFR-D-CANTIDAD      TO   FRM-FMLISOPE-CANTIDAD (WS-I)
+                MOVE   WK-PRECIO            TO   FRM-FMLISOPE-PRECIO   (WS-I)
+                MOVE   DEFR-D-MONTO         TO   FRM-FMLISOPE-VALBRUTO (WS-I)
+                MOVE   DEFR-D-COMISION      TO   FRM-FMLISOPE-COMISION (WS-I)
+                MOVE   DEFR-D-VAL-COMISION  TO   FRM-FMLISOPE-VALCOMIS (WS-I)
+                MOVE   DEFR-D-IVA-COMISION  TO   FRM-FMLISOPE-IVACOMIS (WS-I)
+
+*BVC004-I
+                  IF DETR-D-TIPOTRA NOT = "R"
+                      COMPUTE WK-MONTO  =            DEFR-D-MONTO
+                                                   + DEFR-D-VAL-COMISION
+                                                   + DEFR-D-IVA-COMISION
+                                                   + DEFR-D-TRASLADO
+                                                   + DEFR-D-RETEFUENTE
+                   ELSE
+                     COMPUTE WK-MONTO  =             DEFR-D-MONTO
+                                                   + DEFR-D-VAL-COMISION
+                                                   + DEFR-D-IVA-COMISION
+
+                     COMPUTE WK-MONTO-REG = DEFR-D-VALRECOM +
+                                            DEFR-D-TRASLADO +
+                                            DEFR-D-RETEFUENTE
+                     MOVE   WK-MONTO-REG  TO FRM-FMLISOPE-VALNET-REG (WS-I)
+                                            FRM-FMLISOPE-ENTPAG-REG (WS-I)
+                  END-IF
+
+
+*                IF WK-PUNTA = "C"
+*                   COMPUTE WK-MONTO = DEFR-D-MONTO + DEFR-D-VAL-COMISION +  DEFR-D-IVA-COMISION
+*                ELSE
+*                   COMPUTE WK-MONTO = DEFR-D-MONTO - DEFR-D-VAL-COMISION -  DEFR-D-IVA-COMISION
+*               END-IF
+*BVC004-F
+
+               MOVE    WK-MONTO               TO   FRM-FMLISOPE-VALNET-SAL (WS-I)
+               PERFORM MOVER-TASA THRU MOVER-TASA-FIN
+             ELSE
+                COMPUTE WS-I = WS-I - 1
+             END-IF
+             PERFORM SQL-DEFR-OPE-GET-NEXT    THRU SQL-DEFR-OPE-GET-NEXT-EXIT
+           END-PERFORM
+           IF NOT SQL-SUCCESSFUL
+              MOVE   1    TO   WK-SECUENCIA
+*             CONTINUE
+           ELSE
+              IF WS-I >= 10
+                 GO TO BUSCDE-LISSIG-FIN
+              END-IF
+           END-IF
+        END-IF
+        PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+     ELSE
+        COMPUTE WS-I = WS-I - 1
+*
+        PERFORM NEXT-OPERACION-DE THRU NEXT-OPERACION-DE-FIN
+     END-IF.
+
+     GO TO BUSCDE-LISSIG-LOOP.
+
+ LOOP-DEUDA-FIN.
+*-------------------
+ EXIT.
+
+ NEXT-OPERACION-DE.
+*---------------------
+        EVALUATE WK-CURSOR
+        WHEN 1
+          PERFORM SQL-DECOMP-SEL-GET-NEXT  THRU SQL-DECOMP-SEL-GET-NEXT-EXIT
+        WHEN 2
+          PERFORM SQL-DEVENT-SEL-GET-NEXT  THRU SQL-DEVENT-SEL-GET-NEXT-EXIT
+        END-EVALUATE
+        GO TO BUSCDE-LISSIG-LOOP.
+ NEXT-OPERACION-DE-FIN.
+*----------------------
+ EXIT.
+
+ MOVER-TASA.
+*-----------------
+  IF DETR-D-TIPOTRA = "T" OR "V"
+     MOVE DETR-D-HOR-GRA TO CTSI-D-HOR-GRA
+     PERFORM SQL-CTSI-KEY THRU SQL-CTSI-KEY-EXIT
+     IF SQL-SUCCESSFUL
+        MOVE CTSI-D-SIM-TASA  TO FRM-FMLISOPE-TASA (WS-I)
+     END-IF
+  ELSE
+     IF DETR-D-TIPOTRA = "R"
+        MOVE DETR-D-TASAREPO   TO  FRM-FMLISOPE-TASA (WS-I)
+     END-IF
+  END-IF.
+ MOVER-TASA-FIN.
+*-----------------
+ EXIT.
+
+* VAL-FECCUMP-REG-DE.
+**----------------
+*
+*  MOVE DETR-REG TO DETR-SAVE-REG
+*  IF DETR-D-TIPOTRA = "T" OR "V"
+*      MOVE DETR-D-HOR-GRA TO CTSI-D-HOR-GRA
+*      PERFORM SQL-CTSI-KEY THRU SQL-CTSI-KEY-EXIT
+*      IF SQL-SUCCESSFUL
+*         MOVE CTSI-D-HOR-PAR TO DETR-D-HOR-GRA
+*         PERFORM SQL-DETR-KEY  THRU SQL-DETR-KEY-EXIT
+*         IF SQL-SUCCESSFUL
+*            GO TO VAL-FECCUMP-REG-DE-EXIT
+*         END-IF
+*      END-IF
+*  END-IF.
+* VAL-FECCUMP-REG-DE-EXIT.
+*---------------------
+* EXIT.
+
+ MOVER-REGRESO-DE.
+*-----------------
+   IF DETR-D-TIPOTRA = "N"
+      MOVE   ZEROES            TO   FRM-FMLISOPE-FEC-CUMREG (WS-I)
+                                    FRM-FMLISOPE-VALNET-REG (WS-I)
+                                    FRM-FMLISOPE-ENTPAG-REG (WS-I)
+   ELSE
+      MOVE DETR-REG  TO  DETR-SAVE-REG
+      IF DETR-D-TIPOTRA = "T"
+             MOVE DETR-D-HOR-GRA TO CTSI-D-HOR-GRA
+             PERFORM SQL-CTSI-KEY THRU SQL-CTSI-KEY-EXIT
+             IF SQL-SUCCESSFUL
+                MOVE CTSI-D-HOR-PAR TO DETR-D-HOR-GRA
+                PERFORM SQL-DETR-KEY  THRU SQL-DETR-KEY-EXIT
+                IF SQL-SUCCESSFUL
+              MOVE  DETR-D-FECHA-ENTREGA  TO   FRM-FMLISOPE-FEC-CUMREG (WS-I)
+               IF WK-PUNTA = "C"
+
+*BVC004-I
+                     COMPUTE WK-MONTO     = DETR-D-MONTO
+                                          - DETR-D-VAL-COM-VENTA
+                                          - DETR-D-IVA-COM-VENTA
+                                          + DETR-D-TRASLADO-VEN
+                                          + DETR-D-RETEFUENTE-VEN
+
+
+*                     IF DETR-D-TIPOTRA NOT = "R"
+*                     COMPUTE WK-MONTO     = DETR-D-MONTO
+*                                          - DETR-D-VAL-COM-COMPRA
+*                                          - DETR-D-IVA-COM-COMPRA
+*                                          + DETR-D-TRASLADO-COM
+*                                          + DETR-D-RETEFUENTE-COM
+*                  ELSE
+*                     COMPUTE WK-MONTO     = DETR-D-MONTO
+*                                          - DETR-D-VAL-COM-COMPRA
+*                                          - DETR-D-IVA-COM-COMPRA
+*                  END-IF
+*BVC004-F
+                  MOVE    WK-MONTO     TO   FRM-FMLISOPE-VALNET-REG (WS-I)
+*BVC004-I
+
+**BVC001 - I
+**                  MOVE DETR-D-NETO-COMPRA  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                  IF DETR-D-TIPOTRA = "N"
+*                                      MOVE ZEROS                TO WS-MON-TOTAL
+*                                          MOVE DEFR-D-HOR-GRA       TO DETEXT-D-HOR-GRA
+*                                          MOVE "C"                  TO DETEXT-D-TIPO
+*                                          MOVE ZEROS     TO DETEXT-D-SECUENCIA
+*                                          PERFORM SQL-DETEXT-KEY THRU SQL-DETEXT-KEY
+*                                          IF SQL-SUCCESSFUL
+*                                             IF DETEXT-D-SOLICITA = "C"
+*                                                COMPUTE WS-MON-TOTAL = DEFR-D-MONTO-NETO + DETEXT-D-SANCION
+*                                                MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                             ELSE
+*                                                COMPUTE WS-MON-TOTAL =  DEFR-D-MONTO-NETO - DETEXT-D-SANCION
+*                                                MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                             END-IF
+*                                          ELSE
+*                                             MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                          END-IF
+*                                  ELSE
+*                                      MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                  END-IF
+**BVC001 - F
+                   MOVE DETR-D-NETO-VENTA  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*BVC004-F
+
+               ELSE
+*BVC004-I
+                     MOVE DETR-D-NETO-COMPRA  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+                     COMPUTE WK-MONTO     = DETR-D-MONTO
+                                          - DETR-D-VAL-COM-COMPRA
+                                          - DETR-D-IVA-COM-COMPRA
+                                          + DETR-D-TRASLADO-COM
+                                          + DETR-D-RETEFUENTE-COM
+
+*                     IF DETR-D-TIPOTRA NOT = "R"
+*                     COMPUTE WK-MONTO     = DETR-D-MONTO
+*                                         - DETR-D-VAL-COM-VENTA
+*                                          - DETR-D-IVA-COM-VENTA
+*                                          + DETR-D-TRASLADO-VEN
+*                                          + DETR-D-RETEFUENTE-VEN
+*                  ELSE
+*                     COMPUTE WK-MONTO     = DETR-D-MONTO
+*                                          - DETR-D-VAL-COM-VENTA
+*                                          - DETR-D-IVA-COM-VENTA
+*                  END-IF
+*BVC004-F
+                  MOVE        WK-MONTO     TO FRM-FMLISOPE-VALNET-REG (WS-I)
+*BVC004-I
+**BVC001 - I
+**                  MOVE DETR-D-NETO-VENTA   TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                  IF DETR-D-TIPOTRA = "N"
+*                                      MOVE ZEROS                TO WS-MON-TOTAL
+*                                          MOVE DEFR-D-HOR-GRA       TO DETEXT-D-HOR-GRA
+*                                          MOVE "V"                  TO DETEXT-D-TIPO
+*                                          MOVE ZEROS     TO DETEXT-D-SECUENCIA
+*                                          PERFORM SQL-DETEXT-KEY THRU SQL-DETEXT-KEY
+*                                          IF SQL-SUCCESSFUL
+*                                             IF DETEXT-D-SOLICITA = "V"
+*                                                COMPUTE WS-MON-TOTAL = DEFR-D-MONTO-NETO - DETEXT-D-SANCION
+*                                                MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                             ELSE
+*                                                COMPUTE WS-MON-TOTAL =  DEFR-D-MONTO-NETO + DETEXT-D-SANCION
+*                                                MOVE  WS-MON-TOTAL      TO  FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                             END-IF
+*                                          ELSE
+*                                             MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                          END-IF
+*                                  ELSE
+*                                      MOVE  DEFR-D-MONTO-NETO  TO FRM-FMLISOPE-ENTPAG-REG (WS-I)
+*                                  END-IF
+**BVC001 - F
+*BVC004-F
+               END-IF
+                END-IF
+            END-IF
+*BVC004-I
+      ELSE
+         IF DETR-D-TIPOTRA = "R"
+           MOVE ZEROS TO WK-MONTO
+           IF WK-PUNTA = "C"
+               COMPUTE WK-MONTO =    DETR-D-VALRECOM +
+                                   + DETR-D-TRASLADO-COM
+                                   + DETR-D-RETEFUENTE-COM
+           ELSE
+               COMPUTE WK-MONTO =    DETR-D-VALRECOM +
+                                   + DETR-D-TRASLADO-VEN
+                                   + DETR-D-RETEFUENTE-VEN
+           END-IF
+           MOVE WK-MONTO          TO FRM-FMLISOPE-VALNET-REG (WS-I)
+                                     FRM-FMLISOPE-ENTPAG-REG (WS-I)
+         END-IF
+*BVC004-F
+
+      END-IF
+
+      MOVE DETR-SAVE-REG TO DETR-REG
+   END-IF.
+
+ MOVER-REGRESO-DE-FIN.
+*--------------------
+ EXIT.

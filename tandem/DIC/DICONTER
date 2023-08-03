@@ -1,0 +1,59 @@
+*******************************************************************************
+* NOMBRE    = CONTER                                                          *
+* CONTENIDO = TABLA INFORMACION DE SIMULTANEAS PARA CONTINGENCIA              *
+* FUNCION   = Operacional                                                     *
+* TIPO      = TABLA                                                           *
+*******************************************************************************
+T CONTER   K
+K HOR      P  1 U 1                         ; PRIMARIA: INDICE
+*
+V HOR-GRA             T   [1 1 HOR]                      ; Hora de la accion  a de la Modif.(TimeS
+V INDI-MEN            X 27                                ; Indicador del mensaje  origen
+V TIPO-MEN            X  2                                ; Tipo de mensaje
+V TIPO-OPE-ORI        X  1                                ; Tipo de operacion en el sistema origen
+D COMPLEMENTA            C
+= RECOMPLENTA            R
+= ANULACION              A
+= CUMPLIMIENTO           B
+V NOM-DES-MEN         X  4                                 ; Nombre de la aplicacion destino del mensaje
+V NOM-ORI-MEN         X  2                                 ; Nombre de la aplicacion origen del mensaje
+V TIPO-OPE-SIS        X  1                                 ; Tipo de operacion en el sistema origen
+D OPE-TRANSA             M
+= OPE-REGIST             R
+V ID-OPE              X  12                                ; ID OPERACION (FECHA+FOLIO)
+V FEC-CUM-I           F 08                                 ; Fecha de cumplimiento
+V FEC-CUM-F           F 08                                 ; Fecha de cumplimiento
+V CUS-COM             N 01                                 ; Indicador custodio Compra
+D NO-PAR-CUST            0
+= OPE-PENDIEN            1
+= OPE-CONFIR             2
+V CUS-VEN             N 01                                 ; Indicador custodio Compra
+D NO-PAR-CUST            0
+= OPE-PENDIEN            1
+= OPE-CONFIR             2
+V NOMINAL-OPE         S 16.2                               ; Monto nominal de operacion
+V NOMINAL-OPE-I       S 16.2                               ; Monto nominal de operacion de inicio
+V NOMINAL-OPE-F       S 16.2                               ; Monto nominal de operacion  de fin
+V NEMO                X 12                                 ; Nemo
+V TASA                S 03.04                              ; Tasa
+V CTA-CUD-VEN         X 08                                 ; Custodio venta
+V CTA-VALORES-VEN     X 35                                 ; Cuenta valores venta
+V TIPO-DOC-VEN        X 04                                 ; Tipo documento venta
+V NUM-ID-VEN          X 15                                 ; Numero de identificacion venta
+V COD-MIEMBRO-VEN     X 04                                 ; Codigo miembro venta
+V CTA-CUD-COM         X 08                                 ; Custodio compra
+V CTA-VALORES-COM     X 35                                 ; Cuenta valores compra
+V TIPO-DOC-COM        X 04                                 ; Tipo documento compra
+V NUM-ID-COM          X 15                                 ; Numero de identificacion compra
+V COD-MIEMBRO-COM     X 04                                 ; Codigo miembro compra
+V IND-OPE             N 02                                 ; operacion de salida o recreso
+D SALIDA                  1
+= RECRESO                 2
+V PUNTA               X 01                                  ; PUNTA MODIFICADA
+D COMPRA               C
+= VENTA                V
+= AMBAS                A
+V IND-REINTENTO       X 01                                  ; indicador de reintento para el message process
+D NO-REINTENTO         N                                   ; No ha superado el numero de reintentos
+= SI-REINTENTO         S                                   ; supero el numero de reintentos
+

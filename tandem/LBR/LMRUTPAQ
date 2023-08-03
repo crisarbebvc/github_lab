@@ -1,0 +1,911 @@
+*
+*   Registro de Creacion :
+*
+*   Autor         : Bolsa de Valores de Colombia
+*                   Blanca Lydia Zubieta
+*                   Junio de 2014
+*
+*   Esta librería contiene código común para los procesos de la pizarra de
+*   consulta de detalle de paquetes. Proyecto Custodios.
+*
+****************************LOG DE MODIFICACIONES****************************************
+*****************************************************************************************
+*04-08-2014     *BVC001     *PROYECTO CUSTODIOS                                         *
+*BLANCA ZUBIETA             *AJUSTE CAMPO VALOR GIRO CON LA ADICIÓN DEL VALOR SANCION POR
+*                           *CUMPLIMIENTO EXTEMPORÁNEO                                  *
+*****************************************************************************************
+*26-08-2014     *BVC002     *PROYECTO CUSTODIOS                                         *
+*BLANCA ZUBIETA             *AJUSTE POR ACTUALIZACION DE ALGORITMO CAMPO COLATERAL      *
+*****************************************************************************************
+*31-10-2014     *BVC003     *PROYECTO CUSTODIOS                                         *
+*EDUARDO LUCERO             *CORRECCION ITERACION 1 2 3                                 *
+*****************************************************************************************
+*09-12-2014     *BVC004     *PROYECTO CUSTODIOS                                         *
+*EDUARDO LUCERO             *CORRECCION ITERACION 1 2 3                                 *
+*****************************************************************************************
+*10-02-2015     *BVC005     *PROYECTO CUSTODIOS                                         *
+*CLAUDIA ROZO               *OPERACIONES MILA LOCALES SE DEJA TIPO OP L                 *
+*****************************************************************************************
+*10-04-2015     *BVC006     *PROYECTO CUSTODIOS                                         *
+*EDUARDO LUCERO             *SE AGREGA MILA                                             *
+*****************************************************************************************
+*18-06-2015     *BVC007     *PROYECTO CUSTODIOS                                         *
+*ALEXANDER BARAHONA         *SE CORRIGE EL TIPO DE OPERACION CUANDO SON SUBASTAS O      *
+*                           *DEMANDAS.                                                  *
+*****************************************************************************************
+*28/09/2015     *BVC008     *CUSTODIOS                                                  *
+*Yenifer Barahona           *Ampliación estados no permitidos creación paquetes reglas  *
+*                           *de negocio                                                 *
+*****************************************************************************************
+*14/12/2021 BVC009         *Estabilización BO                                           *
+*CLAUDIA ROZO              *Se cambia cursor DECU-OPE por DECU-OPE1                     *
+*****************************************************************************************
+*28/03/2023 BVC010         *SIMULTANEAS POR TERCEROS                                    *
+*FREDY NIVIA               *SE REALIZA VALIDACION PARA QUE TENGA EN CUENTA TIPOOPE "W"  *
+*****************************************************************************************
+
+*********************EXTENDED-STORAGE****************************************************
+
+?SECTION ES-SECCION
+? SOURCE =LBPAQUET (WS-INV-PAQUET,WS-LIM-PAQUET)
+? SOURCE =LBDETPAQ (WS-INV,WS-LIM-DETPAQ)
+? SOURCE =LMDETPAQ (WS-CUR-DETPAQ-UNI)
+? SOURCE =LBACTR   (WS-INV,WS-LIM-ACTR)
+? SOURCE =LBACTRA  (WS-INV,WS-LIM-ACTRA)
+? SOURCE =LBACTRE  (WS-INV,WS-LIM-ACTRE)
+? SOURCE =LBACTRAE (WS-INV,WS-LIM-ACTRAE)
+? SOURCE =LBTRFRLQ (WS-INV-TRFRLQ,WS-LIM-TRFRLQ)
+? SOURCE =LBTRFRLQ (WS-CUR-TRFRLQ-OPE)
+? SOURCE =LBTRFRLA (WS-INV-TRFRLA,WS-LIM-TRFRLA)
+? SOURCE =LBTRFRLA (WS-CUR-TRFRLA-OPE)
+? SOURCE =LBTRFRLE (WS-INV-TRFRLE,WS-LIM-TRFRLE)
+? SOURCE =LBTRFRLE (WS-CUR-TRFRLE-OPE)
+? SOURCE =LBTRFRAE (WS-INV-TRFRAE,WS-LIM-TRFRAE)
+? SOURCE =LBTRFRAE (WS-CUR-TRFRAE-OPE)
+? SOURCE =LBRFTR   (WS-INV,WS-LIM-RFTR, WS-SAVE-RFTR)
+? SOURCE =LBRFTRA  (WS-INV,WS-LIM-RFTRA, WS-SAVE-RFTRA)
+? SOURCE =LBDETR   (WS-INV,WS-LIM-DETR,WS-SAVE-DETR)
+? SOURCE =LBDEFR   (WS-INV,WS-LIM-DEFR,WS-SAVE-DEFR)
+? SOURCE =LBDEFR   (WS-CUR-DEFR-OPE)
+? SOURCE =LBCUMOPE (WS-INV-CUMOPE,WS-LIM-CUMOPE)
+? SOURCE =LBCUMOPI (WS-INV-CUMOPI,WS-LIM-CUMOPI)
+
+*BVC009-I
+? SOURCE =LBDECU  (WS-INV-DECU)
+? SOURCE =LMDECU   (WS-CUR-DECU-OPE1)
+*? SOURCE =LBDECU  (WS-INV-DECU, WS-LIM-DECU, WS-CUR-DECU-OPE)
+*BVC009-F
+
+*BVC001 - I
+? SOURCE =LBGENEXT  (WS-INV-GENEXT)
+? SOURCE =LBDETEXT  (WS-INV-DETEXT)
+*BVC001 - F
+*BVC008-I
+? SOURCE =LBCUMFRA (WS-INV-CUMFRA,WS-LIM-CUMFRA)
+? SOURCE =LBCUMFRA (WS-CUR-CUMFRA-KEY)
+*BVC008-F
+*BVC008-I
+  01 WK-EMPAERROR         PIC X(01).
+*BVC008-F
+*********************PROCEDURE-DIVISION**************************************
+?SECTION PD-SECCION
+? SOURCE =LBPAQUET (INI-PAQUET,INS-PAQUET,UPD-PAQUET,KEY-PAQUET)
+? SOURCE =LBDETPAQ (KEY-DETPAQ,INI-DETPAQ,INS-DETPAQ,DEL-DETPAQ)
+? SOURCE =LMDETPAQ (GET-DETPAQ-UNI)
+
+? SOURCE =LBACTR   (KEY-ACTR)
+? SOURCE =LBACTRA  (KEY-ACTRA)
+? SOURCE =LBACTRE  (KEY-ACTRE)
+? SOURCE =LBACTRAE (KEY-ACTRAE)
+? SOURCE =LBRFTR   (INI-RFTR,KEY-RFTR)
+? SOURCE =LBRFTRA   (INI-RFTRA, KEY-RFTRA)
+? SOURCE =LBDETR   (INI-DETR, KEY-DETR)
+? SOURCE =LBDEFR   (INI-DEFR, KEY-DEFR)
+? SOURCE =LBTRFRLQ (KEY-TRFRLQ)
+? SOURCE =LBTRFRLQ (GET-TRFRLQ-OPE)
+? SOURCE =LBTRFRLE (KEY-TRFRLE)
+? SOURCE =LBTRFRLE (GET-TRFRLE-OPE)
+? SOURCE =LBTRFRLA (KEY-TRFRLA)
+? SOURCE =LBTRFRLA (GET-TRFRLA-OPE)
+? SOURCE =LBTRFRAE (KEY-TRFRAE)
+? SOURCE =LBTRFRAE (GET-TRFRAE-OPE)
+? SOURCE =LBCUMOPE (KEY-CUMOPE)
+? SOURCE =LBCUMOPI (KEY-CUMOPI)
+
+*BVC009-I
+? SOURCE =LMDECU (GET-DECU-OPE1)
+*? SOURCE =LBDECU  (GET-DECU-OPE)
+*BVC009-F
+
+? SOURCE =LBDEFR   (GET-DEFR-OPE)
+*
+*BVC001 - I
+? SOURCE =LBGENEXT  (KEY-GENEXT)
+? SOURCE =LBDETEXT  (KEY-DETEXT)
+*BVC001 - F
+*BVC008-I
+? SOURCE =LBCUMFRA (GET-CUMFRA-KEY)
+*BVC008-F
+?SECTION EMPBUS
+* BUSCAR PAQUETES Y DETALLE DE PAQUETES
+
+ BUSCA-PKET.
+*-----------
+   MOVE   FRM-FMTMPTRA-CODPAQ   TO  PAQUET-D-COD-PAQUETE
+   PERFORM SQL-PAQUET-KEY   THRU  SQL-PAQUET-KEY-EXIT
+   IF NOT SQL-SUCCESSFUL
+      MOVE 8005                           TO   MSGEDT-CODMSG
+      MOVE "Paquete no encontrado"        TO   MSGEDT-PAR-ALFA(1)
+      MOVE SQLCODE                        TO   MSGEDT-PAR-NUM(1)
+      GO TO SRV-ABORT
+   END-IF
+
+   IF PAQUET-D-ESTADO-TRASLADO = "T" OR "A" OR "P" OR "E"
+      MOVE 3505                                     TO   MSGEDT-CODMSG
+      MOVE "No se permite incluir operaciones por el estado del Paquete"  TO   MSGEDT-PAR-ALFA(1)
+      GO TO SRV-ABORT
+   END-IF
+*
+   MOVE  PAQUET-D-COD-CORREDOR    TO    WK-AFILIADO
+   MOVE  PAQUET-D-COD-CUSTODIO    TO    WK-CUSTODIO
+   MOVE  PAQUET-D-FEC-REGIS       TO    WK-FECHAREG
+   MOVE  PAQUET-D-NEMO-OPER       TO    WK-NEMO
+   MOVE  PAQUET-D-PUNTA           TO    WK-PUNTA
+   MOVE  PAQUET-D-FEC-CUMPL       TO    WK-FECUMSAL
+   MOVE  PAQUET-D-TIPO-ID-INV     TO    WK-TINVER
+   MOVE  PAQUET-D-IDENTIF             TO    WK-NINVER
+   MOVE  PAQUET-D-CUENTA-DVL      TO    WK-CUENTADVL
+   MOVE  PAQUET-D-CANTIDAD        TO    WK-CANTIDAD
+   MOVE  PAQUET-D-PRECIO-PROM     TO    WK-PRECIO-PROM
+   MOVE  PAQUET-D-VALOR-BRUTO     TO    WK-VALOR-BRUTO
+   MOVE  PAQUET-D-VALOR-COMISION  TO    WK-VALOR-COMISION
+   MOVE  PAQUET-D-VALOR-IVA-COMIS TO    WK-VALOR-IVA-COMIS
+   MOVE  PAQUET-D-VALOR-NETO      TO    WK-VALOR-NETO
+   MOVE  PAQUET-D-COD-ADMIN       TO    WK-ADMIN
+   MOVE  PAQUET-D-FECUMP-REG      TO    WK-FECUMREG
+   MOVE  PAQUET-D-TIPO-OPER       TO    WK-TIPOP
+   MOVE  PAQUET-D-ISIN            TO    WK-ISIN
+   MOVE  PAQUET-D-DEPOSITO        TO    WK-DEP
+   MOVE  PAQUET-D-MERCADO         TO    WK-MERCADO
+   MOVE  PAQUET-D-MONTO-PROM      TO    WK-MONTO-PROM
+   MOVE  PAQUET-D-TASA-PROM       TO    WK-TASA-PROM
+*BVC002- I
+   MOVE  PAQUET-D-COLATERAL       TO    WK-COLTR
+*BVC002 - F
+   MOVE  PAQUET-D-COD-PAQUETE     TO    WK-COD-PAQUETE
+                                        WS-COD-PAQUETE-INI.
+
+ BUSCA-PKET-FIN.
+*-----------
+  EXIT.
+
+?SECTION VALIDA
+* VALIDACIONES GENERALES
+ LLAMA-COALGPAQ.
+*-----------
+   MOVE  "P"     TO   WK-ALGPAQ-ORIGEN
+   CALL COALGPAQ USING WK-ALGPAQ
+   IF WK-ALGPAQ-ERROR > 0
+      MOVE  "S"     TO   SW-COALGPAQ
+   ELSE
+      MOVE  "N"     TO   SW-COALGPAQ
+   END-IF.
+ LLAMA-COALGPAQ-FIN.
+*-----------
+  EXIT.
+
+ VALIDA-PKTE.
+*------------
+   MOVE  LOW-VALUE              TO   DETPAQ-D-COD-PAQUETE-INI
+   MOVE  HIGH-VALUE             TO   DETPAQ-D-COD-PAQUETE-FIN
+   PERFORM SQL-DETPAQ-UNI-GET-FIRST THRU SQL-DETPAQ-UNI-GET-FIRST-EXIT
+   IF SQL-SUCCESSFUL
+      MOVE  "S"     TO   SW-PAQUETE
+   ELSE
+      MOVE  "N"     TO   SW-PAQUETE
+   END-IF.
+ VALIDA-PKTE-FIN.
+*------------
+  EXIT.
+*
+ VALIDA-CUMP.
+*------------
+   MOVE   "N"           TO   SW-CUMOPE
+
+   IF (WK-CURSOR = 5 OR WK-CURSOR = 6 OR WK-CURSOR = 7 OR WK-CURSOR = 8)
+      MOVE WK-HOR-GRA-OPE  TO   CUMOPI-D-HOR-GRA
+      MOVE WK-FOLIO        TO   CUMOPI-D-FOLIO
+      MOVE ZEROS           TO   CUMOPI-D-TRAMO-CAR
+      PERFORM SQL-CUMOPI-KEY THRU SQL-CUMOPI-KEY-EXIT
+      IF NOT SQL-SUCCESSFUL
+         MOVE  "S"     TO   SW-CUMOPE
+      ELSE
+         IF CUMOPI-D-CUMP-COM = "S" OR CUMOPI-D-CUMP-VEN = "S"
+              MOVE  "S"     TO   SW-CUMOPE
+         END-IF
+
+         IF WK-PUNTA = "C"
+            IF ((CUMOPI-D-ESTCUM-DEP = "STD" OR "ATD" OR "SBC" OR "ABC" OR "STC" OR
+                                       "ATC" OR "STB" OR "ATB" OR "STV" OR "ATV" OR " ") AND
+                CUMOPI-D-ENVIO-DEP = "S" AND
+                CUMOPI-D-REPIQUE = "N")
+               MOVE  "S"     TO   SW-CUMOPE
+            END-IF
+         ELSE
+            IF ((CUMOPI-D-ESTCUM-DEP = "STD" OR "ATD" OR "SBC" OR "ABC" OR "STC" OR
+                                       "ATC" OR "STB" OR "ATB" OR "STV" OR "ATV" OR " ") AND
+                CUMOPI-D-ENVIO-DEP = "S" AND
+                CUMOPI-D-REPIQUE = "N")
+                MOVE  "S"     TO   SW-CUMOPE
+            END-IF
+         END-IF
+      END-IF
+   ELSE
+      MOVE WK-HOR-GRA-OPE  TO   CUMOPE-D-HOR-GRA
+      MOVE WK-FOLIO        TO   CUMOPE-D-FOLIO
+      MOVE ZEROS           TO   CUMOPE-D-TRAMO-CAR
+      PERFORM SQL-CUMOPE-KEY THRU SQL-CUMOPE-KEY-EXIT
+      IF NOT SQL-SUCCESSFUL
+         MOVE  "S"     TO   SW-CUMOPE
+      ELSE
+         IF CUMOPE-D-CUMP-COM = "S" OR CUMOPE-D-CUMP-VEN = "S"
+              MOVE  "S"     TO   SW-CUMOPE
+         END-IF
+
+         IF WK-PUNTA = "C"
+            IF ((CUMOPE-D-ESTCUM-DEP = "STD" OR "ATD" OR "SBC" OR "ABC" OR "STC" OR
+                                       "ATC" OR "STB" OR "ATB" OR "STV" OR "ATV" OR " ") AND
+                CUMOPE-D-ENVIO-DEP = "S" AND
+                CUMOPE-D-REPIQUE = "N")
+               MOVE  "S"     TO   SW-CUMOPE
+            END-IF
+         ELSE
+            IF ((CUMOPE-D-ESTCUM-DEP = "STD" OR "ATD" OR "SBC" OR "ABC" OR "STC" OR
+                                       "ATC" OR "STB" OR "ATB" OR "STV" OR "ATV" OR " ") AND
+                CUMOPE-D-ENVIO-DEP = "S" AND
+                CUMOPE-D-REPIQUE = "N")
+                MOVE  "S"     TO   SW-CUMOPE
+            END-IF
+         END-IF
+      END-IF
+   END-IF.
+ VALIDA-CUMP-FIN.
+*------------
+  EXIT.
+
+ VALIDA-DETPAQ.
+*----------------
+   MOVE  LOW-VALUE              TO   DETPAQ-D-COD-PAQUETE-INI
+   MOVE  HIGH-VALUE             TO   DETPAQ-D-COD-PAQUETE-FIN
+
+   MOVE  20000101               TO   DETPAQ-D-FEC-PAQUETE-INI
+   MOVE  29991231               TO   DETPAQ-D-FEC-PAQUETE-FIN
+
+   IF FRM-FMTMPTRA-MERCADO  = "AC"
+      MOVE  ACTR-D-HOR-GRA         TO   DETPAQ-D-HOR-GRA-INI
+      MOVE  ACTR-D-HOR-GRA         TO   DETPAQ-D-HOR-GRA-FIN
+   ELSE
+      IF FRM-FMTMPTRA-MERCADO  = "RF"
+         MOVE  RFTR-D-HOR-GRA         TO   DETPAQ-D-HOR-GRA-INI
+         MOVE  RFTR-D-HOR-GRA         TO   DETPAQ-D-HOR-GRA-FIN
+      ELSE
+         MOVE  RFTR-D-HOR-GRA         TO   DETPAQ-D-HOR-GRA-INI
+         MOVE  RFTR-D-HOR-GRA         TO   DETPAQ-D-HOR-GRA-FIN
+      END-IF
+   END-IF
+
+   MOVE  FRM-FMTMPTRA-PUNTA     TO   DETPAQ-D-PUNTA-INI
+   MOVE  FRM-FMTMPTRA-PUNTA     TO   DETPAQ-D-PUNTA-FIN
+
+   MOVE  FRM-FMTMPTRA-NFRACC    TO   DETPAQ-D-FRACCION-INI
+   MOVE  FRM-FMTMPTRA-NFRACC    TO   DETPAQ-D-FRACCION-FIN
+*
+   PERFORM SQL-DETPAQ-UNI-GET-FIRST THRU SQL-DETPAQ-UNI-GET-FIRST-EXIT
+   IF SQL-SUCCESSFUL
+      MOVE   "S"               TO   SW-PAQUETE
+      MOVE SPACES              TO   WS-MENSAJE1
+      IF FRM-FMTMPTRA-MERCADO  = "AC"
+         MOVE ACTR-D-FECOPE       TO   WS-FECHA
+         MOVE ACTR-D-FOLIO        TO   WS-FOLIO
+      ELSE
+         IF FRM-FMTMPTRA-MERCADO  = "RF"
+            MOVE RFTR-D-FECOPE       TO   WS-FECHA
+            MOVE RFTR-D-FOLIO        TO   WS-FOLIO
+         ELSE
+            MOVE DETR-D-FECOPE       TO   WS-FECHA
+            MOVE DETR-D-FOLIO        TO   WS-FOLIO
+         END-IF
+      END-IF
+      MOVE FRM-FMTMPTRA-NFRACC TO   WS-FRACC
+      MOVE "YA SE ENCUENTRA EMPAQUETADA"  TO  WS-TEXTO1
+      MOVE WS-ERROR            TO   WS-MENSAJE1
+      MOVE 3500                TO   MSGEDT-CODMSG
+      MOVE WS-MENSAJE1         TO   MSGEDT-PAR-ALFA(1)
+      GO TO SRV-ABORT
+   ELSE
+      MOVE   "N"            TO     SW-PAQUETE
+   END-IF.
+  VALIDA-DETPAQ-FIN.
+*-------------------
+   EXIT.
+*
+ VALIDA-CUMOPE.
+*--------------
+  MOVE   "N"            TO     SW-CUMOPE
+  IF FRM-FMTMPTRA-MERCADO = "MI"
+     MOVE ACTRE-D-HOR-GRA      TO   CUMOPI-D-HOR-GRA
+     MOVE ACTRE-D-FOLIO        TO   CUMOPI-D-FOLIO
+     MOVE ZEROS               TO   CUMOPI-D-TRAMO-CAR
+     PERFORM SQL-CUMOPI-KEY THRU SQL-CUMOPI-KEY-EXIT
+     IF NOT SQL-SUCCESSFUL
+        MOVE 8005                         TO   MSGEDT-CODMSG
+        MOVE "NO ENCONTRADA EN CUMOPI"    TO   MSGEDT-PAR-ALFA (1)
+        MOVE SQLCODE                      TO   MSGEDT-PAR-NUM(1)
+        GO TO SRV-ABORT
+     END-IF
+     MOVE  CUMOPI-D-CUMP-COM     TO  CUMOPE-D-CUMP-COM
+     MOVE  CUMOPI-D-CUMP-VEN     TO  CUMOPE-D-CUMP-VEN
+     MOVE  CUMOPI-D-ESTCUM-DEP   TO  CUMOPE-D-ESTCUM-DEP
+     MOVE  CUMOPI-D-ENVIO-DEP    TO  CUMOPE-D-ENVIO-DEP
+     MOVE  CUMOPI-D-REPIQUE      TO  CUMOPE-D-REPIQUE
+  ELSE
+    IF FRM-FMTMPTRA-MERCADO  = "AC"
+       MOVE ACTR-D-HOR-GRA      TO   CUMOPE-D-HOR-GRA
+       MOVE ACTR-D-FOLIO        TO   CUMOPE-D-FOLIO
+    ELSE
+       IF FRM-FMTMPTRA-MERCADO  = "RF"
+          MOVE RFTR-D-HOR-GRA      TO   CUMOPE-D-HOR-GRA
+          MOVE RFTR-D-FOLIO        TO   CUMOPE-D-FOLIO
+       ELSE
+          MOVE DETR-D-HOR-GRA      TO   CUMOPE-D-HOR-GRA
+          MOVE DETR-D-FOLIO        TO   CUMOPE-D-FOLIO
+       END-IF
+    END-IF
+* BVC006 I
+*  END-IF
+
+    MOVE ZEROS               TO   CUMOPE-D-TRAMO-CAR
+    PERFORM SQL-CUMOPE-KEY THRU SQL-CUMOPE-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE 8005                         TO   MSGEDT-CODMSG
+       MOVE "NO ENCONTRADA EN CUMOPE"    TO   MSGEDT-PAR-ALFA (1)
+       MOVE SQLCODE                      TO   MSGEDT-PAR-NUM(1)
+       GO TO SRV-ABORT
+    END-IF
+  END-IF
+* BVC006 F
+
+  IF CUMOPE-D-CUMP-COM = "S"  OR CUMOPE-D-CUMP-VEN = "S"
+        MOVE SPACES              TO   WS-MENSAJE1
+        IF FRM-FMTMPTRA-MERCADO  = "AC"
+           MOVE ACTR-D-FECOPE       TO   WS-FECHA
+           MOVE ACTR-D-FOLIO        TO   WS-FOLIO
+        ELSE
+           IF FRM-FMTMPTRA-MERCADO  = "RF"
+              MOVE RFTR-D-FECOPE       TO   WS-FECHA
+              MOVE RFTR-D-FOLIO        TO   WS-FOLIO
+           ELSE
+              MOVE DETR-D-FECOPE       TO   WS-FECHA
+              MOVE DETR-D-FOLIO        TO   WS-FOLIO
+           END-IF
+        END-IF
+        MOVE FRM-FMTMPTRA-NFRACC TO   WS-FRACC
+        MOVE "YA SE ENCUENTRA CUMPLIDA"  TO  WS-TEXTO1
+        MOVE WS-ERROR            TO   WS-MENSAJE1
+        MOVE  3500               TO   MSGEDT-CODMSG
+        MOVE WS-MENSAJE1         TO   MSGEDT-PAR-ALFA(1)
+        GO TO SRV-ABORT
+  END-IF
+
+*BVC008-I
+
+  MOVE SPACES                TO WK-EMPAERROR
+  IF ((CUMOPE-D-ESTCUM-DEP  = SPACES OR "ROP" OR "NOP" OR "PAV"
+     OR "PAC" OR "SBT" OR "MTC" OR "SEP" OR "SOP" OR "PSC" OR "PSV"
+     OR "ABC" OR "ATB" OR "ATC" OR "ATD" OR "ATV" OR "AEP") AND
+     (CUMOPE-D-ENVIO-DEP = "S" AND  CUMOPE-D-REPIQUE = "N" ))
+     MOVE "S"                TO WK-EMPAERROR
+  END-IF
+  IF ((CUMOPE-D-ESTCUM-DEP  = "SBC" OR "STB" OR "STC" OR "STD" OR "STV") AND
+     (CUMOPE-D-ENVIO-DEP = "S") AND  (CUMOPE-D-REPIQUE = "N" OR  "S" OR  "D" ))
+      MOVE "S"                TO WK-EMPAERROR
+  END-IF
+  IF ((CUMOPE-D-ESTCUM-DEP  = "SLE") AND (CUMOPE-D-REPIQUE = "N")
+     AND (CUMOPE-D-ENVIO-DEP = "S" OR   "N"))
+     MOVE "S"                TO WK-EMPAERROR
+  END-IF
+  IF ((CUMOPE-D-ESTCUM-DEP  = "ALE")
+     AND (CUMOPE-D-ENVIO-DEP = "N" OR  CUMOPE-D-REPIQUE = "N"))
+     MOVE "S"                TO WK-EMPAERROR
+  END-IF
+
+  IF FRM-FMTMPTRA-PUNTA = "C"
+
+*     IF ((CUMOPE-D-ESTCUM-DEP = "STD" OR "ATD" OR "SBC" OR "ABC" OR "STC" OR
+*                               "ATC" OR "STB" OR "ATB" OR "STV" OR "ATV" OR " ") AND
+*          CUMOPE-D-ENVIO-DEP = "S" AND
+*          CUMOPE-D-REPIQUE = "N")
+     IF WK-EMPAERROR = "S"
+        MOVE SPACES              TO   WS-MENSAJE1
+        IF FRM-FMTMPTRA-MERCADO  = "AC"
+           MOVE ACTR-D-FECOPE       TO   WS-FECHA
+           MOVE ACTR-D-FOLIO        TO   WS-FOLIO
+        ELSE
+           IF FRM-FMTMPTRA-MERCADO  = "RF"
+              MOVE RFTR-D-FECOPE       TO   WS-FECHA
+              MOVE RFTR-D-FOLIO        TO   WS-FOLIO
+           ELSE
+              MOVE DETR-D-FECOPE       TO   WS-FECHA
+              MOVE DETR-D-FOLIO        TO   WS-FOLIO
+           END-IF
+        END-IF
+        MOVE FRM-FMTMPTRA-NFRACC TO   WS-FRACC
+        MOVE "ESTADO EN CUMPLIMIENTO NO VALIDO"  TO  WS-TEXTO1
+        MOVE WS-ERROR            TO   WS-MENSAJE1
+        MOVE  3500               TO   MSGEDT-CODMSG
+        MOVE WS-MENSAJE1         TO   MSGEDT-PAR-ALFA(1)
+        GO TO SRV-ABORT
+     END-IF
+  ELSE
+*     IF ((CUMOPE-D-ESTCUM-DEP = "STD" OR "ATD" OR "SBC" OR "ABC" OR "STC" OR
+*                               "ATC" OR "STB" OR "ATB" OR "STV" OR "ATV" OR " ") AND
+*          CUMOPE-D-ENVIO-DEP = "S" AND
+*          CUMOPE-D-REPIQUE = "N")
+     IF WK-EMPAERROR = "S"
+*BVC008-F
+        MOVE SPACES              TO   WS-MENSAJE1
+        IF FRM-FMTMPTRA-MERCADO  = "AC"
+           MOVE ACTR-D-FECOPE       TO   WS-FECHA
+           MOVE ACTR-D-FOLIO        TO   WS-FOLIO
+        ELSE
+           IF FRM-FMTMPTRA-MERCADO  = "RF"
+              MOVE RFTR-D-FECOPE       TO   WS-FECHA
+              MOVE RFTR-D-FOLIO        TO   WS-FOLIO
+           ELSE
+              MOVE DETR-D-FECOPE       TO   WS-FECHA
+              MOVE DETR-D-FOLIO        TO   WS-FOLIO
+           END-IF
+        END-IF
+        MOVE FRM-FMTMPTRA-NFRACC TO   WS-FRACC
+        MOVE "ESTADO EN CUMPLIMIENTO NO VALIDO"  TO  WS-TEXTO1
+        MOVE WS-ERROR            TO   WS-MENSAJE1
+        MOVE  3500               TO   MSGEDT-CODMSG
+        MOVE WS-MENSAJE1         TO   MSGEDT-PAR-ALFA(1)
+        GO TO SRV-ABORT
+     END-IF
+  END-IF.
+ VALIDA-CUMOPE-FIN.
+*--------------
+    EXIT.
+
+?SECTION MODPAQ
+*VALIDA ALGORITMO PARA PAQUETES
+
+ VALIDA-COALGPAQ.
+*-----------------
+
+   MOVE  FRM-FMTMPTRA-PUNTA   TO  WK-ALGPAQ-PUNTA
+   MOVE  "P"                  TO  WK-ALGPAQ-ORIGEN
+   MOVE  PAQUET-D-COD-PAQUETE TO  WK-ALGPAQ-CODPAQUE
+
+   IF FRM-FMTMPTRA-MERCADO  = "AC"
+           MOVE  ACTR-D-FECHA-ENTREGA TO  WK-ALGPAQ-FECCUMP
+           MOVE  ACTR-D-NEMO          TO  WK-ALGPAQ-NEMO
+           MOVE ZEROES                TO  WK-ALGPAQ-FECUMRE
+           MOVE ACTR-D-SUC-CUM-VENTA  TO  WK-ALGPAQ-DEPOSITO
+* BVC004 I
+*       MOVE "N"                   TO  WK-ALGPAQ-TIPO-OPE
+       MOVE " "                   TO  WK-ALGPAQ-TIPO-OPE
+       IF ACTR-D-RUEDA-NEG = "MGC"
+          MOVE  "G"       TO   WK-ALGPAQ-TIPO-OPE
+       ELSE
+          IF ACTR-D-POR-OFERTA-SW  = "M" OR
+             ACTR-D-POR-OFERTA-SW  = "P" OR
+             ACTR-D-POR-OFERTA-SW  = "N"
+            MOVE  "N"    TO   WK-ALGPAQ-TIPO-OPE
+          END-IF
+       END-IF
+*BVC005-I
+       IF (PAQUET-D-PUNTA = "C" AND  ACTR-D-COD-BOLSACOM NOT = SPACES) OR
+          (PAQUET-D-PUNTA = "V" AND  ACTR-D-COD-BOLSAVEN NOT = SPACES)
+
+*       IF (WK-PUNTA = "C" AND  ACTR-D-COD-BOLSACOM NOT = SPACES) OR
+*          (WK-PUNTA = "V" AND  ACTR-D-COD-BOLSAVEN NOT = SPACES)
+*BVC005-F
+          MOVE "L"      TO    WK-ALGPAQ-TIPO-OPE
+       END-IF
+* BVC004 F
+*BVC002 - I
+*          MOVE  ACTR-D-HOR-GRA       TO  DECU-D-HOR-GRA
+*       MOVE  FRM-FMTMPTRA-PUNTA   TO  DECU-D-TIPO
+*       MOVE  1                    TO  DECU-D-SECUENCIA
+*       MOVE ZEROS                 TO  DECU-D-NRO-CUPON
+*       MOVE  "AC"                 TO  DECU-D-MERCADO
+*       PERFORM SQL-DECU-KEY THRU SQL-DECU-KEY-EXIT
+
+*BVC009-I
+        MOVE ACTR-D-HOR-GRA  TO DECU-D-HOR-GRA
+        PERFORM SQL-DECU-OPE1-GET-FIRST THRU SQL-DECU-OPE1-GET-FIRST-EXIT
+
+*        MOVE ACTR-D-HOR-GRA  TO DECU-D-HOR-GRA-INI
+*                                DECU-D-HOR-GRA-FIN
+*        PERFORM SQL-DECU-OPE-GET-FIRST THRU SQL-DECU-OPE-GET-FIRST-EXIT
+*BVC009-F
+
+*BVC002 - F
+       IF SQL-SUCCESSFUL
+           MOVE DECU-D-COD-ISIN TO  WK-ALGPAQ-ISIN
+       END-IF
+
+           IF FRM-FMTMPTRA-NFRACC <= 0
+              IF FRM-FMTMPTRA-PUNTA = "C"
+                 MOVE  ACTR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+                 MOVE  ACTR-D-TID-COMPRADOR TO  WK-ALGPAQ-TIPO-ID
+                 MOVE  ACTR-D-NIT-COMPRADOR TO  WK-ALGPAQ-IDENTIF
+              ELSE
+                 MOVE  ACTR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+                 MOVE  ACTR-D-TID-VENDEDOR  TO  WK-ALGPAQ-TIPO-ID
+                 MOVE  ACTR-D-NIT-VENDEDOR  TO  WK-ALGPAQ-IDENTIF
+              END-IF
+           ELSE
+              IF FRM-FMTMPTRA-PUNTA = "C"
+                 MOVE  ACTR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+              ELSE
+                 MOVE  ACTR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+              END-IF
+              MOVE  TFL-D-TNIT1         TO   WK-ALGPAQ-TIPO-ID
+              MOVE  TFL-D-NIT1          TO   WK-ALGPAQ-IDENTIF
+           END-IF
+   ELSE
+      IF FRM-FMTMPTRA-MERCADO  = "RF"
+             MOVE  RFTR-D-FECHA-ENTREGA TO  WK-ALGPAQ-FECCUMP
+             MOVE  RFTR-D-NEMO          TO  WK-ALGPAQ-NEMO
+             MOVE  RFTR-D-UBICACION     TO  WK-ALGPAQ-DEPOSITO
+             MOVE  RFTR-D-TIPOFE        TO  WK-ALGPAQ-TIPO-OPE
+*BVC007-I
+         IF RFTR-D-TIPOFE = "N" AND (RFTR-D-TIPO-TRA = "B" OR "D")
+                     IF RFTR-D-TIPO-TRA = "B"
+                             MOVE "S"               TO  WK-ALGPAQ-TIPO-OPE
+             ELSE
+                             MOVE RFTR-D-TIPO-TRA   TO  WK-ALGPAQ-TIPO-OPE
+             END-IF
+                 END-IF
+*BVC007-F
+             MOVE  "RF"                  TO   DECU-D-MERCADO
+         IF RFTR-D-TIPOFE = "A" OR "R"
+            MOVE RFTR-D-FECHAREPO TO  WK-ALGPAQ-FECUMRE
+         ELSE
+            IF RFTR-D-TIPOFE NOT = "N"
+                       PERFORM VAL-FECCUMP-REG  THRU VAL-FECCUMP-REG-EXIT
+                       MOVE  RFTR-D-FECHA-ENTREGA TO  WK-ALGPAQ-FECUMRE
+                       MOVE RFTR-SAVE-REG  TO RFTR-REG
+                    ELSE
+                       MOVE ZEROES TO WK-ALGPAQ-FECUMRE
+                    END-IF
+             END-IF
+* BVC003 I
+         IF RFTR-D-TIPOFE = "Y"
+            MOVE RFTR-D-HOR-GRA   TO COLTR-D-HOR-GRA
+                                     COLTRA-D-HOR-GRA
+            PERFORM SQL-COLTR-KEY THRU SQL-COLTR-KEY-EXIT
+            IF NOT SQL-SUCCESSFUL
+               PERFORM SQL-COLTRA-KEY THRU SQL-COLTRA-KEY-EXIT
+               IF SQL-SUCCESSFUL
+                  MOVE COLTRA-REG    TO  COLTR-REG
+               END-IF
+            END-IF
+            MOVE COLTR-D-COLATERAL   TO WK-ALGPAQ-COLATERAL
+         END-IF
+* BVC003 F
+*BVC002 - I
+*                MOVE   RFTR-D-HOR-GRA       TO   DECU-D-HOR-GRA
+*            MOVE   FRM-FMTMPTRA-PUNTA   TO   DECU-D-TIPO
+*            MOVE  1                     TO   DECU-D-SECUENCIA
+*         MOVE ZEROS                  TO   DECU-D-NRO-CUPON
+*            PERFORM SQL-DECU-KEY THRU SQL-DECU-KEY-EXIT
+
+*BVC009-I
+         MOVE RFTR-D-HOR-GRA  TO DECU-D-HOR-GRA
+         PERFORM SQL-DECU-OPE1-GET-FIRST THRU SQL-DECU-OPE1-GET-FIRST-EXIT
+
+*         MOVE RFTR-D-HOR-GRA  TO DECU-D-HOR-GRA-INI
+*                                DECU-D-HOR-GRA-FIN
+*         PERFORM SQL-DECU-OPE-GET-FIRST THRU SQL-DECU-OPE-GET-FIRST-EXIT
+*BVC009-F
+*BVC002 - F
+             IF SQL-SUCCESSFUL
+                MOVE DECU-D-COD-ISIN TO  WK-ALGPAQ-ISIN
+             END-IF
+             IF FRM-FMTMPTRA-NFRACC <= 0
+                    IF FRM-FMTMPTRA-PUNTA = "C"
+                       MOVE  RFTR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+                       MOVE  RFTR-D-TID-COMPRADOR TO  WK-ALGPAQ-TIPO-ID
+                       MOVE  RFTR-D-NIT-COMPRADOR TO  WK-ALGPAQ-IDENTIF
+                    ELSE
+                       MOVE  RFTR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+                       MOVE  RFTR-D-TID-VENDEDOR  TO  WK-ALGPAQ-TIPO-ID
+                       MOVE  RFTR-D-NIT-VENDEDOR  TO  WK-ALGPAQ-IDENTIF
+                    END-IF
+                 ELSE
+                    IF FRM-FMTMPTRA-PUNTA = "C"
+                       MOVE  RFTR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+                    ELSE
+                       MOVE  RFTR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+                    END-IF
+                    MOVE  TFL-D-TNIT1         TO   WK-ALGPAQ-TIPO-ID
+                    MOVE  TFL-D-NIT1          TO   WK-ALGPAQ-IDENTIF
+                 END-IF
+      ELSE
+         IF FRM-FMTMPTRA-MERCADO  = "DE"
+                    MOVE  DETR-D-FECHA-ENTREGA TO  WK-ALGPAQ-FECCUMP
+                    MOVE  DETR-D-NEMO          TO  WK-ALGPAQ-NEMO
+                MOVE  DETR-D-UBICACION     TO  WK-ALGPAQ-DEPOSITO
+                MOVE  DETR-D-TIPOTRA       TO  WK-ALGPAQ-TIPO-OPE
+            IF DETR-D-TIPOTRA = "R"
+               MOVE DETR-D-FECHAREPO    TO WK-ALGPAQ-FECUMRE
+            ELSE
+               IF DETR-D-TIPOTRA NOT = "N"
+                          PERFORM VAL-FECCUMP-REG-DE  THRU VAL-FECCUMP-REG-DE-EXIT
+                          MOVE DETR-D-FECHA-ENTREGA TO WK-ALGPAQ-FECUMRE
+                          MOVE DETR-SAVE-REG   TO DETR-REG
+*BVC002 - I
+                       ELSE
+                          MOVE ZEROS TO WK-ALGPAQ-FECUMRE
+*BVC002 - F
+                       END-IF
+                END-IF
+*BVC002 - I
+*                   MOVE   DETR-D-HOR-GRA       TO   DECU-D-HOR-GRA
+*               MOVE   FRM-FMTMPTRA-PUNTA   TO   DECU-D-TIPO
+*               MOVE  1                     TO   DECU-D-SECUENCIA
+*            MOVE ZEROS                  TO   DECU-D-NRO-CUPON
+*               MOVE  "DP"                  TO   DECU-D-MERCADO
+*               PERFORM SQL-DECU-KEY THRU SQL-DECU-KEY-EXIT
+
+*BVC009-I
+            MOVE DETR-D-HOR-GRA  TO DECU-D-HOR-GRA
+            PERFORM SQL-DECU-OPE1-GET-FIRST THRU SQL-DECU-OPE1-GET-FIRST-EXIT
+
+*            MOVE DETR-D-HOR-GRA  TO DECU-D-HOR-GRA-INI
+*                                    DECU-D-HOR-GRA-FIN
+*            PERFORM SQL-DECU-OPE-GET-FIRST THRU SQL-DECU-OPE-GET-FIRST-EXIT
+*BVC009-F
+
+*BVC002 - F
+                IF SQL-SUCCESSFUL
+                   MOVE DECU-D-COD-ISIN TO  WK-ALGPAQ-ISIN
+                END-IF
+*BVC002 - I
+*               IF FRM-FMTMPTRA-NFRACC <= 0
+*                      IF FRM-FMTMPTRA-PUNTA = "C"
+*                         MOVE  DETR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+*                      ELSE
+*                         MOVE  DETR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+*                   END-IF
+*                 ELSE
+*                   IF FRM-FMTMPTRA-PUNTA = "C"
+*                      MOVE  DETR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+*                      MOVE "C"                   TO DEFR-D-TIPO
+*                   ELSE
+*                      MOVE  DETR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+*                      MOVE "V"                   TO DEFR-D-TIPO
+*                   END-IF
+*                END-IF
+
+                IF FRM-FMTMPTRA-PUNTA = "C"
+                   MOVE  DETR-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+                ELSE
+                   MOVE  DETR-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+                END-IF
+
+                   MOVE DETR-D-HOR-GRA        TO DEFR-D-HOR-GRA
+                   MOVE FRM-FMTMPTRA-NFRACC   TO DEFR-D-SECUENCIA
+                   MOVE FRM-FMTMPTRA-PUNTA    TO DEFR-D-TIPO
+
+               PERFORM SQL-DEFR-KEY  THRU SQL-DEFR-KEY-EXIT
+               IF SQL-SUCCESSFUL
+                  MOVE  DEFR-D-TNIT1         TO   WK-ALGPAQ-TIPO-ID
+                  MOVE  DEFR-D-NIT1          TO   WK-ALGPAQ-IDENTIF
+               END-IF
+*BVC002 - F
+* BVC006 I
+         ELSE
+            IF FRM-FMTMPTRA-MERCADO  = "MI"
+                   MOVE  ACTRE-D-FECHA-ENTREGA  TO  WK-ALGPAQ-FECCUMP
+                   MOVE  ACTRE-D-NEMO           TO  WK-ALGPAQ-NEMO
+                   MOVE  ZEROES                 TO  WK-ALGPAQ-FECUMRE
+                   MOVE  ACTRE-D-SUC-CUM-VENTA  TO  WK-ALGPAQ-DEPOSITO
+               MOVE  ACTRE-D-POR-OFERTA-SW  TO  WK-ALGPAQ-TIPO-OPE
+               IF ACTRE-D-PUNTA = "C"
+                  MOVE ACTRE-D-COD-BOLSA-COM   TO  ACMIE-D-COD-BOLSA
+               ELSE
+                  IF ACTRE-D-PUNTA = "V"
+                     MOVE ACTRE-D-COD-BOLSA-VEN   TO  ACMIE-D-COD-BOLSA
+                  END-IF
+               END-IF
+               MOVE   ACTRE-D-NEMO       TO   ACMIE-D-NEMO
+               PERFORM SQL-ACMIE-KEY THRU SQL-ACMIE-KEY-EXIT
+               IF SQL-SUCCESSFUL
+                  MOVE ACMIE-D-COD-ISIN    TO  WK-ALGPAQ-ISIN
+               END-IF
+*
+                   IF FRM-FMTMPTRA-NFRACC <= 0
+                      IF FRM-FMTMPTRA-PUNTA = "C"
+                         MOVE  ACTRE-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+                         MOVE  ACTRE-D-TID-COMPRADOR TO  WK-ALGPAQ-TIPO-ID
+                         MOVE  ACTRE-D-NIT-COMPRADOR TO  WK-ALGPAQ-IDENTIF
+                      ELSE
+                         MOVE  ACTRE-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+                         MOVE  ACTRE-D-TID-VENDEDOR  TO  WK-ALGPAQ-TIPO-ID
+                         MOVE  ACTRE-D-NIT-VENDEDOR  TO  WK-ALGPAQ-IDENTIF
+                     END-IF
+                   ELSE
+                     IF FRM-FMTMPTRA-PUNTA = "C"
+                        MOVE  ACTRE-D-COD-CORR-COM  TO  WK-ALGPAQ-COD-FIRMA
+                     ELSE
+                        MOVE  ACTRE-D-COD-CORR-VEN  TO  WK-ALGPAQ-COD-FIRMA
+                     END-IF
+                     MOVE  TFL-D-TNIT1         TO   WK-ALGPAQ-TIPO-ID
+                     MOVE  TFL-D-NIT1          TO   WK-ALGPAQ-IDENTIF
+                  END-IF
+                END-IF
+             END-IF
+* BVC006 F
+      END-IF
+   END-IF
+   PERFORM LLAMA-COALGPAQ   THRU   LLAMA-COALGPAQ-FIN
+   IF WK-ALGPAQ-ERROR > 0
+      MOVE   "S"               TO   SW-COALGPAQ
+      MOVE SPACES              TO   WS-MENSAJE1
+      IF FRM-FMTMPTRA-MERCADO  = "AC"
+         MOVE ACTR-D-FECOPE       TO   WS-FECHA
+         MOVE ACTR-D-FOLIO        TO   WS-FOLIO
+      ELSE
+         IF FRM-FMTMPTRA-MERCADO  = "RF"
+            MOVE RFTR-D-FECOPE       TO   WS-FECHA
+            MOVE RFTR-D-FOLIO        TO   WS-FOLIO
+         ELSE
+            MOVE DETR-D-FECOPE       TO   WS-FECHA
+            MOVE DETR-D-FOLIO        TO   WS-FOLIO
+         END-IF
+      END-IF
+      MOVE FRM-FMTMPTRA-NFRACC TO   WS-FRACC
+      MOVE WK-ALGPAQ-MSG       TO   WS-TEXTO1
+      MOVE WS-ERROR            TO   WS-MENSAJE1
+      MOVE  3500               TO   MSGEDT-CODMSG
+      MOVE WS-MENSAJE1         TO   MSGEDT-PAR-ALFA(1)
+      GO TO SRV-ABORT
+   ELSE
+      MOVE  "N"     TO   SW-COALGPAQ
+   END-IF.
+ VALIDA-COALGPAQ-FIN.
+*------------------
+   EXIT.
+
+?SECTION REGRESO
+* DATO OP DE REGRESO RF Y DE
+
+ VAL-FECCUMP-REG.
+*----------------
+
+  MOVE RFTR-REG TO RFTR-SAVE-REG
+  EVALUATE  RFTR-D-TIPOFE
+    WHEN "T"
+          MOVE RFTR-D-HOR-GRA TO STSI-D-HOR-GRA
+                                 STSIA-D-HOR-GRA
+          PERFORM SQL-STSI-KEY THRU SQL-STSI-KEY-EXIT
+          IF SQL-SUCCESSFUL
+             MOVE STSI-D-HOR-PAR TO RFTR-D-HOR-GRA
+             PERFORM SQL-RFTR-KEY  THRU SQL-RFTR-KEY-EXIT
+             IF SQL-SUCCESSFUL
+                GO TO VAL-FECCUMP-REG-EXIT
+             END-IF
+          ELSE
+             PERFORM SQL-STSIA-KEY THRU SQL-STSIA-KEY-EXIT
+             IF SQL-SUCCESSFUL
+                MOVE STSIA-D-HOR-PAR TO RFTRA-D-HOR-GRA
+                PERFORM SQL-RFTRA-KEY  THRU SQL-RFTRA-KEY-EXIT
+                IF SQL-SUCCESSFUL
+                               MOVE RFTRA-REG TO RFTR-REG
+                               GO TO VAL-FECCUMP-REG-EXIT
+                END-IF
+             END-IF
+          END-IF
+
+    WHEN "Y"
+          MOVE RFTR-D-HOR-GRA TO ACTV-D-HOR-GRA
+                                 ACTVA-D-HOR-GRA
+          PERFORM SQL-ACTV-KEY THRU SQL-ACTV-KEY-EXIT
+          IF SQL-SUCCESSFUL
+             MOVE ACTV-D-HOR-PAR TO RFTR-D-HOR-GRA
+             PERFORM SQL-RFTR-KEY  THRU SQL-RFTR-KEY-EXIT
+             IF SQL-SUCCESSFUL
+                MOVE "AC"      TO  DECU-D-MERCADO
+                GO TO VAL-FECCUMP-REG-EXIT
+             END-IF
+          ELSE
+             PERFORM SQL-ACTVA-KEY THRU SQL-ACTVA-KEY-EXIT
+             IF SQL-SUCCESSFUL
+                MOVE ACTVA-D-HOR-PAR TO RFTRA-D-HOR-GRA
+                PERFORM SQL-RFTRA-KEY  THRU SQL-RFTRA-KEY-EXIT
+                IF SQL-SUCCESSFUL
+                               MOVE RFTRA-REG TO RFTR-REG
+                               MOVE "AC"      TO  DECU-D-MERCADO
+                               GO TO VAL-FECCUMP-REG-EXIT
+                END-IF
+             END-IF
+          END-IF
+  END-EVALUATE.
+
+ VAL-FECCUMP-REG-EXIT.
+*---------------------
+ EXIT.
+
+ VAL-FECCUMP-REG-DE.
+*----------------
+
+  MOVE DETR-REG TO DETR-SAVE-REG
+  IF DETR-D-TIPOTRA = "T" OR "V"
+*BVC010-I 
+     OR "W"
+*BVC010-F 
+      MOVE DETR-D-HOR-GRA TO CTSI-D-HOR-GRA
+      PERFORM SQL-CTSI-KEY THRU SQL-CTSI-KEY-EXIT
+      IF SQL-SUCCESSFUL
+         MOVE CTSI-D-HOR-PAR TO DETR-D-HOR-GRA
+         PERFORM SQL-DETR-KEY  THRU SQL-DETR-KEY-EXIT
+         IF SQL-SUCCESSFUL
+            GO TO VAL-FECCUMP-REG-DE-EXIT
+         END-IF
+      END-IF
+  END-IF.
+ VAL-FECCUMP-REG-DE-EXIT.
+*---------------------
+ EXIT.
+
+
+?SECTION ENVDYN
+
+ ENVIAR-DYN-DETALLE.
+*-----------
+   MOVE SQL-TIMEST-EDIT         TO DYNPAQ-KEY
+   MOVE "D"                     TO DYNPAQ-D-IND
+   MOVE DETPAQ-D-COD-PAQUETE    TO DYNPAQ-D-COD-PAQ
+   MOVE DETPAQ-D-FEC-PAQUETE    TO DYNPAQ-D-FECHA-PAQ
+   MOVE DETPAQ-D-HOR-GRA        TO DYNPAQ-D-HOR-GRA
+   MOVE DETPAQ-D-PUNTA          TO DYNPAQ-D-PUNTA
+   MOVE DETPAQ-D-FRACCION       TO DYNPAQ-D-FRACCION
+   MOVE PAQUET-D-COD-CORREDOR   TO DYNPAQ-D-COD-AFIL
+   MOVE PAQUET-D-COD-CUSTODIO   TO DYNPAQ-D-COD-CUST
+   MOVE WS-DYNPAQ-REG           TO WK-QFILE-DATA
+*
+   MOVE WS-NUM-ARCH-DYIDPQ      TO WK-QFILE-NUMBER
+   PERFORM ESCRIBIR-QFILE THRU  ESCRIBIR-QFILE-EXIT
+   IF WK-QFILE-ERROR-NUM        NOT = ZEROS
+      GO TO SRV-ABORT
+   END-IF.
+*
+ ENVIAR-DYN-DETALLE-EXIT.
+*-----------------
+   EXIT.
+*
+ ENVIAR-DYN-PAQUETE.
+*-----------
+     MOVE SQL-TIMEST-EDIT         TO DYNPAQ-KEY
+     MOVE "P"                     TO DYNPAQ-D-IND
+     MOVE PAQUET-D-COD-PAQUETE    TO DYNPAQ-D-COD-PAQ
+     MOVE WS-DYNPAQ-REG           TO WK-QFILE-DATA
+*
+     MOVE WS-NUM-ARCH-DYIDPQ      TO WK-QFILE-NUMBER
+     PERFORM ESCRIBIR-QFILE THRU  ESCRIBIR-QFILE-EXIT
+     IF WK-QFILE-ERROR-NUM        NOT = ZEROS
+        GO TO SRV-ABORT
+     END-IF.
+*
+ ENVIAR-DYN-PAQUETE-EXIT.
+*-----------------
+   EXIT.
+*
+
+
+
