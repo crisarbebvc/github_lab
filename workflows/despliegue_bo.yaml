@@ -1,0 +1,17 @@
+name: despliegue-bo
+on: [push]
+jobs:
+	despliegue-bo:
+		runs-on: ubuntu-latest
+		steps:
+            - uses: actions/checkout@v3
+            - name: Modified files
+              id: changed-files
+              run: |
+                echo "changed_files=$(git diff --name-only -r HEAD^1 HEAD | xargs)" >> $GITHUB_OUTPUT
+            - uses: myuser/my-action@releases/v1
+              with:
+                url: "ftp://ftp.mywebsite.com/"
+                files: ${{ steps.changed-files.outputs.changed_files }}
+                user: ${{ secrets.FTP_USER }}
+                password: ${{ secrets.FTP_PWD }}
