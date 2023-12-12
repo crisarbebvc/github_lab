@@ -3,7 +3,7 @@
 ** HEALTH CHECK BAKOFFICE
 ** CLAUDIA ROZO
 ** SE INCLUYEN DIRECTIVAS PARA AGREGAR NUEVA COMPLIB5
-
+** Geany Rendon Osorio
 *? ENV COMMON
 *? SYMBOLS
 *? INSPECT
@@ -34,8 +34,8 @@
 *                             MODIFICACIONES                                    *
 *********************************************************************************
 *08/08/2014 *BVC001  *PROYECTO CUSTODIOS                                        *
-*BLANCA ZUBIETA      *ADICIONAR SACIÓN EXTEMPORANEO PARA PIZARRA DETALLE PAQ    *
-*                    *EN EL DETALLE DE LA PUNTA /FRACCIÓN                       *
+*BLANCA ZUBIETA      *ADICIONAR SACIÃ“N EXTEMPORANEO PARA PIZARRA DETALLE PAQ    *
+*                    *EN EL DETALLE DE LA PUNTA /FRACCIÃ“N                       *
 ********************************************************************************
 *26-08-2014     *BVC002     *PROYECTO CUSTODIOS                                 *
 *BLANCA ZUBIETA             *AJUSTE POR ACTUALIZACION DE ALGORITMO CAMPO COLATERAL*
@@ -47,7 +47,7 @@
 *Claudia Rozo         *Ajuste movimiento valores Neto, vr giro                  *
 *********************************************************************************
 *27/01/2015 *BVC005   *CUSTODIOS                                                *
-*Claudia Rozo         *Ajuste búsqueda oepraciones                              *
+*Claudia Rozo         *Ajuste bÃºsqueda oepraciones                              *
 *********************************************************************************
 *19/06/2015 *BVC006  *PROYECTO CUSTODIOS                                        *
 *YENIFER BARAHONA    *MODIFICACION PARA QUE PIZARRA DETALLE PAQUETE INCLUYA OPE-*
@@ -60,7 +60,7 @@
 *26/04/2017 *BVC008  *INET                                                      *
 *Jorge Quiroga Cuz   *Agregar operaciones a paquete                             *
 *********************************************************************************
-*14/12/2021 BVC010   *Estabilización BO                                         *
+*14/12/2021 BVC010   *EstabilizaciÃ³n BO                                         *
 *CLAUDIA ROZO        *Se cambia cursor DECU-OPE por DECU-OPE1                   *
 *********************************************************************************
 *21/03/2023 BVC011   *SIMULTANEAS POR TERCEROS                                  *
