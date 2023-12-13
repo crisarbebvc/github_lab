@@ -7,10 +7,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
         - name: Get Latest Code
-        uses: actions/checkout@v3
+          uses: actions/checkout@v3
         - name: FTP Deployer
-        uses: sand4rt/ftp-deployer@v1.7
-        with:
+          uses: sand4rt/ftp-deployer@v1.7
+          with:
             sftp: false
             host: ${{ secrets.HOST_NAME }}
             port: 21
