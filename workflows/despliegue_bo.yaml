@@ -9,9 +9,17 @@ jobs:
               id: changed-files
               run: |
                 echo "changed_files=$(git diff --name-only -r HEAD^1 HEAD | xargs)" >> $GITHUB_OUTPUT
-            - uses: myuser/my-action@releases/v1
+            - name: FTP Deployer
+              uses: sand4rt/ftp-deployer@v1.7
               with:
-                url: "ftp://ftp.mywebsite.com/"
-                files: ${{ steps.changed-files.outputs.changed_files }}
-                user: ${{ secrets.FTP_USER }}
-                password: ${{ secrets.FTP_PWD }}
+                sftp: false
+                host: ${{ secrets.HOST_NAME }}
+                port: 21
+                username: ${{ secrets.USER_NAME }}
+                password: ${{ secrets.PASSWORD }}
+                remote_folder: ${{ secrets.REMOTE_FOLDER }} # optional, remote path of your FTP server
+                local_folder: tandem # optional, local path, default is: dist
+                cleanup: false # optional, remove existing files inside FTP remote folder
+                include: '[]' # optional, e.g. '['dist']'
+                exclude: '[]' # optional, e.g. '['node_modules/**', '.git/**', '*.env']'
+                passive: true # optional
