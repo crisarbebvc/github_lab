@@ -5,24 +5,20 @@ on:
 jobs:
     changedfiles:
         runs-on: ubuntu-latest
-        outputs:
-            src: ${{ steps.changes.outputs.src}}
-            dic: ${{ steps.changes.outputs.dic }}
-            lbr: ${{ steps.changes.outputs.lbr }}
         steps:
             - name: Get Latest Code
               uses: actions/checkout@v3
             - name: Get changed files
               id: changes
               run: |
-                 echo "::set-output name=src::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep SR* | xargs)"
-                 echo "::set-output name=dic::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep DI* | xargs)"
-                 echo "::set-output name=lbr::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep LM* | xargs)"
+                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep SR* | xargs)" >> $GITHUB_ENV
+                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep DI* | xargs)" >> $GITHUB_ENV
+                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep LM* | xargs)" >> $GITHUB_ENV
             - name: List changed files
               run: |
-                 echo ${{steps.changes.outputs.src}}
-                 echo ${{steps.changes.outputs.dic}}
-                 echo ${{steps.changes.outputs.frm}}
+                 echo ${{ env.TANDEM_SRC }}
+                 echo ${{ env.TANDEM_DIC }}
+                 echo ${{ env.TANDEM_LBR }}
     build:
         runs-on: ubuntu-latest
         needs: changedfiles
