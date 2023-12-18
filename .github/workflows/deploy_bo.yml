@@ -9,10 +9,11 @@ jobs:
         - name: Get Latest Code
           uses: actions/checkout@v3
         - name: FTP Deployer
-          uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+          uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
           with:
-            server: ftpupload.net
-            username: if0_35607821
-            password: qAZxb6Nx9k8Rm
-            server-dir: "/tandem/"
-            local-dir: "./tandem"
+            ftp_host: ${{ secrets.HOST_NAME }}
+            ftp_username: ${{ secrets.USER_NAME }}
+            ftp_password: ${{ secrets.PASSWORD }}
+            local_source_dir: "tandem"
+            dist_target_dir: "tandem"
+            delete: "true"
