@@ -11,8 +11,8 @@ jobs:
         - name: FTP Deployer
           uses: airvzxf/ftp-deployment-action@latest
           with:
-            server: ${{ secrets.HOST_NAME }}
-            user: ${{ secrets.USER_NAME }}
-            password: ${{ secrets.PASSWORD }}
-            remote_dir: ${{ secrets.REMOTE_FOLDER }}
-            local_dir: tandem
+            server: ${{ secrets.ftp.HOST_NAME }}
+            user: ${{ secrets.ftp.USER_NAME }}
+            password: ${{ secrets.ftp.PASSWORD }}
+            remote_dir: "/tandem/"
+            local_dir: "./tandem"
