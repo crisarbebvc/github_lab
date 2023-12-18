@@ -11,9 +11,9 @@ jobs:
             - name: Get changed files
               id: changes
               run: |
-                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep SR* | xargs)" >> $GITHUB_ENV
-                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep DI* | xargs)" >> $GITHUB_ENV
-                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep LM* | xargs)" >> $GITHUB_ENV
+                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SR*" | xargs)" >> $GITHUB_ENV
+                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DI*" | grep DI* | xargs)" >> $GITHUB_ENV
+                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LM*" | grep LM* | xargs)" >> $GITHUB_ENV
             - name: List changed files
               run: |
                  echo "Servidores: ${{ steps.changes.outputs.TANDEM_SRC }}"
