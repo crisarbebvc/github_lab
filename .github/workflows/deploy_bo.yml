@@ -15,9 +15,9 @@ jobs:
             - name: Get changed files
               id: changes
               run: |
-                 echo "::set-output name=src::$(git diff --name-only --diff-filter=ACMRT | grep SR* | xargs)"
-                 echo "::set-output name=dic::$(git diff --name-only --diff-filter=ACMRT | grep DI* | xargs)"
-                 echo "::set-output name=lbr::$(git diff --name-only --diff-filter=ACMRT | grep LM* | xargs)"
+                 echo "::set-output name=src::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep SR* | xargs)"
+                 echo "::set-output name=dic::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep DI* | xargs)"
+                 echo "::set-output name=lbr::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.event.after }} | grep LM* | xargs)"
             - name: List changed files
               run: |
                  echo ${{steps.changes.outputs.src}}
