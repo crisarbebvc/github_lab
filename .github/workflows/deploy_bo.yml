@@ -11,23 +11,18 @@ jobs:
             - name: Get changed files
               id: changes
               run: |
-                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SR*")" >> $GITHUB_OUTPUT
-                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DI*")" >> $GITHUB_OUTPUT
-                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LM*")" >> $GITHUB_OUTPUT
+                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SRC/SR*")" >> $GITHUB_OUTPUT
+                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DIC/DI*")" >> $GITHUB_OUTPUT
+                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LBR/LM*")" >> $GITHUB_OUTPUT
             - name: List changed files
               run: |
-                 for file in ${{ steps.changes.outputs.TANDEM_SRC }}; do
-                    echo "$file was changed"
-                 done
-                 for file in ${{ steps.changes.outputs.TANDEM_DIC }}; do
-                    echo "$file was changed"
-                 done
-                 for file in ${{ steps.changes.outputs.TANDEM_DIC }}; do
-                    echo "$file was changed"
-                 done
-    build:
+                 echo "Servidores: ${{ steps.changes.outputs.TANDEM_SRC }}"
+                 echo "Diccinarios: ${{ steps.changes.outputs.TANDEM_DIC }}"
+                 echo "Librerias: ${{ steps.changes.outputs.TANDEM_LBR }}"
+    put_src:
         runs-on: ubuntu-latest
         needs: changedfiles
+        if: ${{needs.changedfiles.outputs.TANDEM_SRC}}
         steps:
         - name: Get Latest Code
           uses: actions/checkout@v3
@@ -37,6 +32,39 @@ jobs:
             ftp_host: ${{ secrets.HOST_NAME }}
             ftp_username: ${{ secrets.USER_NAME }}
             ftp_password: ${{ secrets.PASSWORD }}
-            local_source_dir: "tandem"
-            dist_target_dir: "tandem"
+            local_source_dir: "tandem/src"
+            dist_target_dir: "tandem/src"
+            delete: "false"
+    put_dic:
+        runs-on: ubuntu-latest
+        needs: changedfiles
+        if: ${{needs.changedfiles.outputs.TANDEM_DIC}}
+        steps:
+        - name: Get Latest Code
+          uses: actions/checkout@v3
+        - name: FTP Deployer
+          uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
+          with:
+            ftp_host: ${{ secrets.HOST_NAME }}
+            ftp_username: ${{ secrets.USER_NAME }}
+            ftp_password: ${{ secrets.PASSWORD }}
+            local_source_dir: "tandem/dic"
+            dist_target_dir: "tandem/dic"
+            delete: "false"
+
+    put_lbr:
+        runs-on: ubuntu-latest
+        needs: changedfiles
+        if: ${{needs.changedfiles.outputs.TANDEM_LBR}}
+        steps:
+        - name: Get Latest Code
+          uses: actions/checkout@v3
+        - name: FTP Deployer
+          uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
+          with:
+            ftp_host: ${{ secrets.HOST_NAME }}
+            ftp_username: ${{ secrets.USER_NAME }}
+            ftp_password: ${{ secrets.PASSWORD }}
+            local_source_dir: "tandem/lbr"
+            dist_target_dir: "tandem/lbr"
             delete: "false"
