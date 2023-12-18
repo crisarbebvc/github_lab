@@ -14,10 +14,17 @@ jobs:
                  echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SR*")" >> $GITHUB_OUTPUT
                  echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DI*")" >> $GITHUB_OUTPUT
                  echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LM*")" >> $GITHUB_OUTPUT
+            - name: List changed files
               run: |
-                 echo "Servidores: ${{ steps.changes.outputs.TANDEM_SRC }}"
-                 echo "Diccinarios: ${{ steps.changes.outputs.TANDEM_DIC }}"
-                 echo "Librerias: ${{ steps.changes.outputs.TANDEM_LBR }}"
+                 for file in ${{ steps.changes.outputs.TANDEM_SRC }}; do
+                    echo "$file was changed"
+                 done
+                 for file in ${{ steps.changes.outputs.TANDEM_DIC }}; do
+                    echo "$file was changed"
+                 done
+                 for file in ${{ steps.changes.outputs.TANDEM_DIC }}; do
+                    echo "$file was changed"
+                 done
     build:
         runs-on: ubuntu-latest
         needs: changedfiles
