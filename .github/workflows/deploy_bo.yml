@@ -5,15 +5,19 @@ on:
 jobs:
     changedfiles:
         runs-on: ubuntu-latest
+        outputs:
+            TANDEM_SRC: ${{ steps.changes.outputs.src}}
+            TANDEM_DIC: ${{ steps.changes.outputs.dic}}
+            TANDEM_LBR: ${{ steps.changes.outputs.lbr}}
         steps:
             - name: Get Latest Code
               uses: actions/checkout@v3
             - name: Get changed files
               id: changes
               run: |
-                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SRC/SR*")" >> $GITHUB_OUTPUT
-                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DIC/DI*")" >> $GITHUB_OUTPUT
-                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LBR/LM*")" >> $GITHUB_OUTPUT
+                 echo "::set-output name=src::$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SRC/SR*")"
+                 echo "::set-output name=dic::$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DIC/DI*")"
+                 echo "::set-output name=lbr::$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LBR/LM*")"
             - name: List changed files
               run: |
                  echo "Servidores: ${{ steps.changes.outputs.TANDEM_SRC }}"
