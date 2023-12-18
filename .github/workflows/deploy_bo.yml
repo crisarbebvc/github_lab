@@ -11,10 +11,9 @@ jobs:
             - name: Get changed files
               id: changes
               run: |
-                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SR*")" >> "$GITHUB_OUTPUT"
-                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DI*")" >> "$GITHUB_OUTPUT"
-                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LM*")" >> "$GITHUB_OUTPUT"
-            - name: List changed files
+                 echo "TANDEM_SRC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/SR*")" >> $GITHUB_OUTPUT
+                 echo "TANDEM_DIC=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/DI*")" >> $GITHUB_OUTPUT
+                 echo "TANDEM_LBR=$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LM*")" >> $GITHUB_OUTPUT
               run: |
                  echo "Servidores: ${{ steps.changes.outputs.TANDEM_SRC }}"
                  echo "Diccinarios: ${{ steps.changes.outputs.TANDEM_DIC }}"
