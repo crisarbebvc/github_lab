@@ -9,12 +9,10 @@ jobs:
         - name: Get Latest Code
           uses: actions/checkout@v3
         - name: FTP Deployer
-          uses: airvzxf/ftp-deployment-action@latest
+          uses: SamKirkland/FTP-Deploy-Action@v4.3.4
           with:
             server: ${{ secrets.HOST_NAME }}
-            user: ${{ secrets.USER_NAME }}
+            username: ${{ secrets.USER_NAME }}
             password: ${{ secrets.PASSWORD }}
-            remote_dir: "/tandem/"
-            local_dir: "./tandem"
-            max_retries: 2
-            delete: true
+            server-dir: "/tandem/"
+            local-dir: "./tandem"
