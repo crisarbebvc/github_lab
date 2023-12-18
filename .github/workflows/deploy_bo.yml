@@ -12,7 +12,7 @@ jobs:
           uses: SamKirkland/FTP-Deploy-Action@v4.3.4
           with:
             server: ftpupload.net
-            username: ${{ secrets.USER_NAME }}
+            username: if0_35607821
             password: ${{ secrets.PASSWORD }}
             server-dir: "/tandem/"
             local-dir: "./tandem"
