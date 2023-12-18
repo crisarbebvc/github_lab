@@ -6,9 +6,9 @@ jobs:
     changedfiles:
         runs-on: ubuntu-latest
         outputs:
-            TANDEM_SRC: ${{ steps.changes.outputs.src}}
-            TANDEM_DIC: ${{ steps.changes.outputs.dic}}
-            TANDEM_LBR: ${{ steps.changes.outputs.lbr}}
+            src: ${{ steps.changes.outputs.src}}
+            dic: ${{ steps.changes.outputs.dic}}
+            lbr: ${{ steps.changes.outputs.lbr}}
         steps:
             - name: Get Latest Code
               uses: actions/checkout@v3
@@ -20,13 +20,13 @@ jobs:
                  echo "::set-output name=lbr::$(git diff --name-only --diff-filter=ACMRT main~ main | grep "tandem/LBR/LM*")"
             - name: List changed files
               run: |
-                 echo "Servidores: ${{ steps.changes.outputs.TANDEM_SRC }}"
-                 echo "Diccinarios: ${{ steps.changes.outputs.TANDEM_DIC }}"
-                 echo "Librerias: ${{ steps.changes.outputs.TANDEM_LBR }}"
+                 echo "Servidores: ${{ steps.changes.outputs.src }}"
+                 echo "Diccinarios: ${{ steps.changes.outputs.dic }}"
+                 echo "Librerias: ${{ steps.changes.outputs.lbr }}"
     put_src:
         runs-on: ubuntu-latest
         needs: changedfiles
-        if: ${{needs.changedfiles.outputs.TANDEM_SRC}}
+        if: ${{needs.changedfiles.outputs.src}}
         steps:
         - name: Get Latest Code
           uses: actions/checkout@v3
@@ -42,7 +42,7 @@ jobs:
     put_dic:
         runs-on: ubuntu-latest
         needs: changedfiles
-        if: ${{needs.changedfiles.outputs.TANDEM_DIC}}
+        if: ${{needs.changedfiles.outputs.dic}}
         steps:
         - name: Get Latest Code
           uses: actions/checkout@v3
@@ -59,7 +59,7 @@ jobs:
     put_lbr:
         runs-on: ubuntu-latest
         needs: changedfiles
-        if: ${{needs.changedfiles.outputs.TANDEM_LBR}}
+        if: ${{needs.changedfiles.outputs.lbr}}
         steps:
         - name: Get Latest Code
           uses: actions/checkout@v3
