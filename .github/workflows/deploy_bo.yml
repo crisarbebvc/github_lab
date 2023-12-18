@@ -3,15 +3,27 @@ on:
     push:
         branches: [ main ]
 jobs:
+    changedfiles:
+        runs-on: ubuntu-latest
+        outputs:
+            src: ${{ steps.changes.outputs.src}}
+            dic: ${{ steps.changes.outputs.dic }}
+            lbr: ${{ steps.changes.outputs.lbr }}
+        steps:
+            - name: Get Latest Code
+              uses: actions/checkout@v3
+            - name: Get changed files
+              id: changes
+              run: |
+                 echo "::set-output name=src::$(git diff --name-only --diff-filter=SR | xargs)"
+                 echo "::set-output name=dic::$(git diff --name-only --diff-filter=DI | xargs)"
+                 echo "::set-output name=lbr::$(git diff --name-only --diff-filter=LM | xargs)"
     build:
         runs-on: ubuntu-latest
+        needs: changedfiles
         steps:
         - name: Get Latest Code
           uses: actions/checkout@v3
-        - name: Modified files
-          id: changed-files
-          run: |
-              echo "changed_files=$(git diff --name-only -r HEAD^1 HEAD | xargs)" >> $GITHUB_OUTPUT
         - name: FTP Deployer
           uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
           with:

@@ -1,0 +1,723 @@
+*******************************************************************************
+** 2021-08-18 MEJORA MACROS DE COMPILACION-I
+** HEALTH CHECK BAKOFFICE
+** CLAUDIA ROZO
+** SE INCLUYEN DIRECTIVAS PARA AGREGAR NUEVA COMPLIB5
+
+*? ENV COMMON
+*? SYMBOLS
+*? INSPECT
+*? LINES 52
+*? OPTIMIZE 2
+
+** 2021-08-18 MEJORA MACROS DE COMPILACION-F
+*******************************************************************************
+
+*==============================================================================
+? SQL (PAGES 999)
+? CONSULT $SYSTEM.SYSTEM.COBOLEX0
+? LESS-CODE 1
+*==============================================================================
+ IDENTIFICATION DIVISION.
+*========================
+ PROGRAM-ID.    ENVTER.
+ AUTHOR.        FREDY NIVIA
+ INSTALLATION.  B.V.C.
+ DATE-WRITTEN.  02-MAR-2022.
+ DATE-COMPILED. 02-MAR-2022.
+ SECURITY.      LEE COLA QFENVTER VALIDA LOS DATOS DE LA COMPLEMENTACION
+*************************************************************************************
+****************************LOG DE MODIFICACIONES************************************
+*FREDY NIVIA *BVC001  *AJUSTE A LOS CAMPOS SALTER-D-CTA-VALORES-VEN
+*                      SALTER-D-CTA-VALORES-COM, SALTER-D-CUS-COM,
+*                      SALTER-D-CUS-VEN
+*************************************************************************************
+*FREDY NIVIA *BVC002  *AJUSTE A LOS CAMPOS SALTER-D-CTA-CUD-VEN  SALTER-D-CTA-CUD-VEN
+*************************************************************************************
+*08-02-2023  *BVC003  *SI LA OPOERACION FUE ADMITIDA SE DEBE MOVER S A LA PUNTA
+*FREDY NIVIA           QUE SE ADMITIO CAMARA-D-CUS-COM CAMARA-D-CUS-VEN
+*************************************************************************************
+
+
+ ENVIRONMENT DIVISION.
+*=====================
+? SOURCE =LBSRVALL (SRV-CS)
+ INPUT-OUTPUT SECTION.
+* ---------------------
+  FILE-CONTROL.
+
+ DATA DIVISION.
+*==============
+  FILE SECTION.
+* ------------
+
+ WORKING-STORAGE SECTION.
+*========================
+? LIST
+? SOURCE =LBSQLERR (WS)
+? SOURCE =LBSRVALL (SRV-WS)
+? SOURCE =LMQFILE (WS)
+? SOURCE =LMCOLERR (WS-INV-COLERR)
+? SOURCE =LMCOLERR (WS-INV-QFILE)
+? SOURCE =LMCOLERR (WS-FD-COLERR)
+? SOURCE =LMQFLBUS (WS-FD-ENVBUS,WS-INV-ENVBUS)
+? SOURCE =LMQFLBUS (WS-INV-QFENVTER)
+? SOURCE =LMQFLBUS (WS-INV-QFSIMCAM)
+? SOURCE =LMTRSOCK (WS)
+? SOURCE =LBTIMESR (WS, LK)
+ 01 NIVEL-LMCRCDYN.
+? SOURCE =LMCRCDYN (WS-INV-CRCDYN,WS-INV-QFILE,WS-FD-CRCDYN)
+* VARIABLES
+* ---------
+ 01 WS-VARIABLES.
+    03 WS-NUM-ENVTER                   PIC S9(4) COMP.
+    03 WS-NUM-BUNECO                   PIC S9(4) COMP.
+    03 WS-NUM-COLERR                   PIC S9(4) COMP.
+    03 WS-NUM-CRCDYN                   PIC S9(4) COMP.
+*
+ 01 WS-PROC-EOF-FLAG                   PIC X.
+    88  WS-PROC-EOF                     VALUE "Y".
+*
+ 01 LLAVE-OPERA.
+    03 WS-FECHA                        PIC X(10).
+    03 WS-PARA                         PIC X(01).
+    03 WS-FOLIO                        PIC 999999999.
+ 01 LLAVE-OPERA-X  REDEFINES LLAVE-OPERA  PIC X(20).
+*
+ 01 SIS-MEN-ORI.
+    03 WS-BO                           PIC X(03) VALUE "BO-".
+    03 WS-HOR-ANO                      PIC X(04).
+    03 WS-HOR-MES                      PIC X(02).
+    03 WS-HOR-DIA                      PIC X(02).
+    03 WS-FILLER1                      PIC X(01) VALUE "-".
+    03 WS-FOLIO-MEN                    PIC 999999999.
+    03 WS-FILLER2                      PIC X(01) VALUE "-".
+    03 WS-LLAVE-MEN                    PIC X(05).
+ 01 SIS-MEN-ORI-X  REDEFINES SIS-MEN-ORI  PIC X(27).
+*
+ 01 ID-OPERA.
+    03 WS-FECHA-AA                     PIC X(02).
+    03 WS-FECHA-MM                     PIC X(02).
+    03 WS-FECHA-DD                     PIC X(02).
+    03 WS-FOLIO-ID                     PIC 999999.
+ 01 ID-OPERA-X  REDEFINES ID-OPERA     PIC X(12).
+
+ 01 WS-CTA.
+*BVC001-I
+    03 WS-CTA-CEROS                    PIC X(23).
+    03 WS-CTA-CODENT                   PIC X(02).
+    03 WS-CTA-CODDCV                   PIC X(10).
+*   03 WS-CTA-CODDCV                   PIC 9999.
+*   03 WS-CTA-CODENT                   PIC X(02).
+*   03 WS-CTA-SPACES                   PIC X(29).
+ 01 WS-CODBOL.
+    03 WS-CODBOL-COM                   PIC X(03).
+        03 WS-CODBOL-VEN                   PIC X(03).
+*BVC001-F
+
+ 01 WS-DATOS                           PIC X(900).
+*
+ 01 WS-MONTO                           PIC  X(20).
+ 01 WS-MONTO-1                         PIC  X(20).
+ 01 WE-FECHA-OPERACION                 PIC  X(30).
+ 01 WE-FOLIO                           PIC  9(9).
+*
+ 01 WS-TIPO-DOC                        PIC X(1).
+ 01 WS-TIPO-DOC-CAM                    PIC X(4).
+ 01 WS-ESPERA                          PIC 9(4).
+ 01 WS-DELAY                           PIC S9(8).
+ 01 WS-CAMARA-ESTADO                   PIC 9(3).
+ 01 WS-ACCION                          PIC X(01).
+
+ EXTENDED-STORAGE SECTION.
+*=========================
+? LIST
+? SOURCE =LBDETR   (WS-INV-DETR,WS-LIM-DETR)
+? SOURCE =LBDEFR   (WS-INV-DEFR,WS-LIM-DEFR)
+? SOURCE =LBDEFRAN (WS-INV-DEFRAN,WS-LIM-DEFRAN)
+? SOURCE =LBCAMARA (WS-INV-CAMARA,WS-LIM-CAMARA)
+? SOURCE =LBSALTER (WS-INV-SALTER,WS-LIM-SALTER)
+? SOURCE =LBCONTER (WS-INV-CONTER,WS-LIM-CONTER)
+? SOURCE =LBSACTER (WS-INV-SACTER,WS-LIM-SACTER)
+? SOURCE =LBCAMCOD (WS-INV-CAMCOD,WS-LIM-CAMCOD)
+? SOURCE =LBDVLCOM (WS-INV-DVLCOM,WS-LIM-DVLCOM)
+? SOURCE =LBCAMLOG (WS-INV-CAMLOG,WS-LIM-CAMLOG)
+? SOURCE =LBAUDICA (WS-INV)
+? SOURCE =LBCUMOPE (WS-INV-CUMOPE,WS-LIM-CUMOPE)
+? SOURCE =LBUSU    (WS-INV)
+? SOURCE =LBCTSI   (WS-INV)
+? SOURCE =LBDEMI   (WS-INV)
+? SOURCE =LMTRRBUS (WS-FOI-073)
+? SOURCE =LMTRRBUS (WS-FOI-074)
+*------------------ P R O C E D U R E    D I V I S I O N ----------------------
+
+ PROCEDURE DIVISION.
+*===================
+
+ SRV-INIT.
+*=========
+
+* =============
+* QF DE ENTRADA
+* =============
+*  Se abre el archivo de QFILE  de entrada "\BOBVC.$BBD2.DESQFI.QFSIMCAM"
+   MOVE WS-QFILE-ENVTER                TO WK-QFILE-NAME.
+   MOVE WS-ENVBUS-LONG                 TO WK-QFILE-DATA-LONG
+   PERFORM ABRIR-LECTURA-QFILE THRU  ABRIR-LECTURA-QFILE-EXIT.
+   MOVE WK-QFILE-NUMBER                TO WS-NUM-ENVTER.
+*
+* ============
+* QF COLERR
+* ============
+* Open archivo QFILE  de salida "\BOBVC.$DATA2.SIOVAL.QFCOLER".
+   MOVE WS-QFILE-COLERR                TO WK-QFILE-NAME
+   MOVE WS-COLERR-LONG                 TO WK-QFILE-DATA-LONG
+   PERFORM ABRIR-ESCRITURA-QFILE   THRU ABRIR-ESCRITURA-QFILE-EXIT
+   MOVE WK-QFILE-NUMBER                TO WS-NUM-COLERR.
+*
+   MOVE WS-QFILE-CRCDYN                TO WK-QFILE-NAME
+   MOVE WS-ENVBUS-LONG                 TO WK-QFILE-DATA-LONG
+   PERFORM ABRIR-ESCRITURA-QFILE THRU ABRIR-ESCRITURA-QFILE-EXIT
+   MOVE WK-QFILE-NUMBER                TO WS-NUM-CRCDYN
+*
+  PERFORM SRV-PROCESO-PPAL   THRU  SRV-PROCESO-PPAL-EXIT UNTIL
+        WS-PROC-EOF.
+  STOP RUN.
+*
+ SRV-INIT.  EXIT.
+*----------------
+
+*--------------------------- S U B R U T I N A S ------------------------------
+
+ SRV-PROCESO-PPAL.
+*-----------------
+   MOVE WS-NUM-ENVTER                  TO WK-QFILE-NUMBER
+   MOVE SPACES                         TO ENVBUS-REG
+   PERFORM LECTURA-QFILE THRU  LECTURA-QFILE-EXIT.
+   EXEC SQL BEGIN WORK END-EXEC
+   IF WK-QFILE-ERROR-NUM = ZEROS
+      MOVE SPACES                      TO WS-ENVBUS
+      MOVE WK-QFILE-DATA               TO WS-ENVBUS
+      PERFORM GENERA-TRAMA    THRU  GENERA-TRAMA-EXIT
+   ELSE
+      SET WS-PROC-EOF                  TO TRUE
+   END-IF
+   EXEC SQL COMMIT WORK END-EXEC.
+*-----------------------------
+ SRV-PROCESO-PPAL-EXIT.  EXIT.
+*
+ GENERA-TRAMA.
+*-------------
+   MOVE WS-ENVBUS-DATA         TO  ENVBUS-REG
+*
+   EVALUATE ENVBUS-D-ACCION
+*TIPO COMPLEMENTACION = C Y RECOMPLEMENTACION = R
+       WHEN "C"
+          MOVE 615                     TO WS-CAMARA-ESTADO
+*ANULACION
+       WHEN "A"
+          MOVE 604                     TO WS-CAMARA-ESTADO
+*CUMPLIMIENTO
+       WHEN "B"
+          MOVE 606                     TO WS-CAMARA-ESTADO
+      END-EVALUATE
+
+      PERFORM PROCESAR-OPERA   THRU   PROCESAR-OPERA-EXIT.
+*------------------
+ GENERA-TRAMA-EXIT.
+    EXIT.
+*
+ PROCESAR-OPERA.
+*----------------
+    MOVE ENVBUS-D-HOR-GRA              TO  DETR-D-HOR-GRA
+                                           WE-FECHA-OPERACION
+    MOVE 0                             TO  WE-FOLIO
+    PERFORM SQL-DETR-KEY THRU SQL-DETR-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBDETR"     TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+*
+    MOVE ENVBUS-D-HOR-GRA              TO  CAMARA-D-HOR-GRA
+    PERFORM SQL-CAMARA-KEY THRU SQL-CAMARA-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBCAMARA"   TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+
+    PERFORM  SQL-TIMEST  THRU  SQL-TIMEST-EXIT
+    MOVE SQL-TIMEST-EDIT               TO SALTER-D-HORA-TRAMA
+
+    MOVE "BO-"                         TO WS-BO
+    MOVE CAMARA-D-HOR-GRA-ANO          TO WS-HOR-ANO
+    MOVE CAMARA-D-HOR-GRA-MES          TO WS-HOR-MES
+    MOVE CAMARA-D-HOR-GRA-DIA          TO WS-HOR-DIA
+    MOVE "- "                          TO WS-FILLER1
+    MOVE CAMARA-D-FOLIO                TO WS-FOLIO-MEN
+    MOVE "- "                          TO WS-FILLER2
+    MOVE SALTER-D-HORA-TRAMA(22:5)     TO WS-LLAVE-MEN
+    MOVE SIS-MEN-ORI-X                 TO SALTER-D-INDI-MEN
+
+    MOVE "C7"                          TO SALTER-D-TIPO-MEN
+    IF ENVBUS-D-ACCION NOT = "C" AND  "A" AND  "B"
+       MOVE "TIPO DE OPERACION NO VALIDO " TO COLERR-DESCRIPCION
+       MOVE CUMOPE-D-FOLIO             TO WE-FOLIO
+       MOVE ENVBUS-REG                 TO WS-DATOS
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+    MOVE ENVBUS-D-ACCION               TO SALTER-D-TIPO-OPE-ORI
+*VALIDO SI ES COMPLEMENTACION O RECOMPLEMNATACION
+*
+    IF ENVBUS-D-ACCION = "C"
+       MOVE CAMARA-D-HOR-GRA             TO DEFRAN-D-HOR-GRA
+       MOVE "C"                          TO DEFRAN-D-TIPO
+       MOVE ZERO                         TO DEFRAN-D-SECUENCIA
+       PERFORM SQL-DEFRAN-KEY THRU SQL-DEFRAN-KEY-EXIT
+       IF NOT SQL-SUCCESSFUL
+          MOVE "C"                       TO SALTER-D-TIPO-OPE-ORI
+       ELSE
+          MOVE "R"                       TO SALTER-D-TIPO-OPE-ORI
+       END-IF
+    END-IF
+*
+    MOVE "CRCC"                        TO SALTER-D-NOM-DES-MEN
+    MOVE "BO"                          TO SALTER-D-NOM-ORI-MEN
+
+    IF DETR-D-TIPO-MERCADO NOT EQUAL "N" AND
+       DETR-D-TIPO-MERCADO NOT EQUAL "D"
+
+       MOVE ENVBUS-D-HOR-GRA           TO CUMOPE-D-HOR-GRA
+       MOVE CAMARA-D-FOLIO             TO CUMOPE-D-FOLIO
+       MOVE ZEROS                      TO CUMOPE-D-TRAMO-CAR
+
+      PERFORM SQL-CUMOPE-KEY THRU SQL-CUMOPE-KEY-EXIT
+
+       IF NOT SQL-SUCCESSFUL
+          MOVE "ERROR AL LEER TBCUMOPE" TO COLERR-DESCRIPCION
+          MOVE ENVBUS-D-HOR-GRA        TO WE-FECHA-OPERACION
+          MOVE CUMOPE-D-FOLIO          TO WE-FOLIO
+          MOVE ENVBUS-REG              TO WS-DATOS
+          PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+          GO TO PROCESAR-OPERA-EXIT
+       ELSE
+         IF CUMOPE-D-SISTEMA EQUAL "R"
+            MOVE  "H"                  TO SALTER-D-TIPO-OPE-SIS
+         ELSE
+* TRANSACCIONAL
+            MOVE  "M"                  TO SALTER-D-TIPO-OPE-SIS
+         END-IF
+       END-IF
+    ELSE
+       IF DETR-D-RUSIOPEL = "TRD"
+          MOVE  "H"                    TO SALTER-D-TIPO-OPE-SIS
+       ELSE
+          MOVE  "M"                    TO SALTER-D-TIPO-OPE-SIS
+       END-IF
+    END-IF
+
+    MOVE CAMARA-D-HOR-GRA-ANO(3:2)     TO WS-FECHA-AA
+    MOVE CAMARA-D-HOR-GRA-MES          TO WS-FECHA-MM
+    MOVE CAMARA-D-HOR-GRA-DIA          TO WS-FECHA-DD
+    MOVE CAMARA-D-FOLIO                TO WS-FOLIO-ID
+    MOVE ID-OPERA                      TO SALTER-D-ID-OPE
+    MOVE CUMOPE-D-FEC-CUMP             TO SALTER-D-FEC-CUM-I
+*BVC001-I
+    MOVE "N"                        TO CAMARA-D-CUS-COM
+*COMPRA
+    EVALUATE ENVBUS-D-CLAVE(1:1)
+
+         WHEN "N"
+           MOVE ZERO                       TO SALTER-D-CUS-COM
+         WHEN "E"
+           MOVE 1                          TO SALTER-D-CUS-COM
+         WHEN "S"
+           MOVE 2                          TO SALTER-D-CUS-COM
+*BVC003-I
+           MOVE "S"                         TO CAMARA-D-CUS-COM
+*BVC003-F
+        END-EVALUATE
+*VENTA
+    MOVE "N"                               TO CAMARA-D-CUS-VEN
+    EVALUATE ENVBUS-D-CLAVE(2:1)
+
+         WHEN "N"
+           MOVE ZERO                       TO SALTER-D-CUS-VEN
+         WHEN "E"
+           MOVE 1                          TO SALTER-D-CUS-VEN
+         WHEN "S"
+           MOVE 2                          TO SALTER-D-CUS-VEN
+*BVC003-I
+          MOVE "S"                        TO CAMARA-D-CUS-VEN
+*BVC003-F
+        END-EVALUATE
+*   MOVE 0                             TO SALTER-D-CUS-COM
+*   MOVE 0                             TO SALTER-D-CUS-VEN
+*BVC001-F
+    MOVE DETR-D-CANTIDAD               TO SALTER-D-NOMINAL-OPE
+
+    MOVE DETR-D-MONTO                  TO SALTER-D-NOMINAL-OPE-I
+
+    MOVE  DETR-D-NEMO                  TO SALTER-D-NEMO
+
+    MOVE DETR-D-FOLIO                  TO WE-FOLIO
+    MOVE DETR-D-HOR-GRA                TO CTSI-D-HOR-GRA
+    PERFORM SQL-CTSI-KEY THRU SQL-CTSI-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBCTSI"     TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+    IF CTSI-D-SIM-ORDEN = "S"  THEN
+       IF CTSI-D-SIM-TASA >= 0
+          MOVE   "+"                   TO SALTER-D-TASA
+       ELSE
+          MOVE   "-"                   TO SALTER-D-TASA
+       END-IF
+       MOVE ZEROES                     TO WS-MONTO
+       MOVE CTSI-D-SIM-TASA            TO SALTER-D-TASA
+    END-IF
+*BVC002-I
+*    MOVE DETR-D-COD-CORR-VEN           TO DVLCOM-D-CODBOL
+    MOVE ENVBUS-D-INDICE(1:3)          TO WS-CODBOL-COM
+        MOVE ENVBUS-D-INDICE(4:3)          TO WS-CODBOL-VEN
+    IF SALTER-D-CUS-VEN = 2
+       MOVE WS-CODBOL-VEN              TO DVLCOM-D-CODBOL
+    ELSE
+           MOVE DETR-D-COD-CORR-VEN        TO DVLCOM-D-CODBOL
+        END-IF
+*BVC002-F
+    PERFORM SQL-DVLCOM-KEY THRU  SQL-DVLCOM-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER DVLCOM"     TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+*BVC002-I
+*   MOVE  DVLCOM-D-CODDVL              TO SALTER-D-CTA-CUD-VEN
+     MOVE DVLCOM-D-CTASEBRA              TO SALTER-D-CTA-CUD-VEN
+
+*BVC002-F
+*BVC001-I
+*   IF DETR-D-CODENT-V = SPACES
+*      MOVE ZEROS                      TO WS-CTA-CODENT
+*   ELSE
+*      MOVE DETR-D-CODENT-V            TO WS-CTA-CODENT
+*   END-IF
+*   MOVE SPACES                        TO WS-CTA-SPACES
+    MOVE ZEROS                         TO WS-CTA
+    MOVE DETR-D-CODENT-V                 TO WS-CTA-CODENT
+        MOVE DETR-D-NRO-CTA-DVL-V          TO WS-CTA-CODDCV
+*BVC001-F
+    MOVE WS-CTA                        TO SALTER-D-CTA-VALORES-VEN
+
+    MOVE "V"                           TO DEFR-D-TIPO
+    PERFORM BUSCA-DEFR THRU BUSCA-DEFR-EXIT
+
+    MOVE DEFR-D-TNIT1                  TO WS-TIPO-DOC
+    PERFORM TIPO-DOC THRU TIPO-DOC-EXIT
+    MOVE WS-TIPO-DOC-CAM               TO SALTER-D-TIPO-DOC-VEN
+    MOVE DEFR-D-NIT1                   TO SALTER-D-NUM-ID-VEN
+
+    MOVE  DETR-D-COD-CORR-VEN          TO USU-D-COD-CORR
+    PERFORM SQL-USU-KEY THRU SQL-USU-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBUSU"      TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+    MOVE   USU-D-CODIGO-CRCC           TO SALTER-D-COD-MIEMBRO-VEN
+*BVC002-I
+*    MOVE DETR-D-COD-CORR-COM           TO DVLCOM-D-CODBOL
+    IF SALTER-D-CUS-COM = 2
+       MOVE WS-CODBOL-COM              TO DVLCOM-D-CODBOL
+    ELSE
+           MOVE DETR-D-COD-CORR-COM        TO DVLCOM-D-CODBOL
+        END-IF
+*BVC002-F
+    PERFORM SQL-DVLCOM-KEY THRU  SQL-DVLCOM-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBDVLCOM"   TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+*BVC002-I
+*    MOVE  DVLCOM-D-CODDVL              TO SALTER-D-CTA-CUD-COM
+    MOVE  DVLCOM-D-CTASEBRA            TO SALTER-D-CTA-CUD-COM
+*BVC002-F
+*BVC001-I
+*    IF DETR-D-CODENT-C = SPACES
+*       MOVE ZEROS                      TO WS-CTA-CODENT
+*    ELSE
+*       MOVE DETR-D-CODENT-C            TO WS-CTA-CODENT
+*    END-IF
+*    MOVE SPACES                        TO WS-CTA-SPACES
+    MOVE ZEROS                         TO WS-CTA
+    MOVE DETR-D-CODENT-C               TO WS-CTA-CODENT
+        MOVE DETR-D-NRO-CTA-DVL-C          TO WS-CTA-CODDCV
+*BVC001-F
+    MOVE WS-CTA                        TO SALTER-D-CTA-VALORES-COM
+
+    MOVE "C"                           TO DEFR-D-TIPO
+    PERFORM BUSCA-DEFR THRU BUSCA-DEFR-EXIT
+
+    MOVE DEFR-D-TNIT1                  TO WS-TIPO-DOC
+    PERFORM TIPO-DOC THRU TIPO-DOC-EXIT
+    MOVE WS-TIPO-DOC-CAM               TO SALTER-D-TIPO-DOC-COM
+    MOVE DEFR-D-NIT1                   TO SALTER-D-NUM-ID-COM
+
+    MOVE  DETR-D-COD-CORR-COM          TO USU-D-COD-CORR
+    PERFORM SQL-USU-KEY THRU SQL-USU-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBUSU"      TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+    MOVE   USU-D-CODIGO-CRCC           TO SALTER-D-COD-MIEMBRO-COM
+*
+
+* ------------mueve regreso---------------
+    MOVE CTSI-D-HOR-PAR                TO  DETR-D-HOR-GRA
+    PERFORM SQL-DETR-KEY THRU SQL-DETR-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBDETR"     TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+    MOVE DETR-D-MONTO                  TO SALTER-D-NOMINAL-OPE-F
+*
+    MOVE DETR-D-HOR-GRA                TO CUMOPE-D-HOR-GRA
+    MOVE ZEROS                         TO CUMOPE-D-TRAMO-CAR
+    MOVE DETR-D-FOLIO                  TO CUMOPE-D-FOLIO
+    PERFORM SQL-CUMOPE-KEY THRU SQL-CUMOPE-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBCUMOPE"   TO COLERR-DESCRIPCION
+       MOVE DETR-D-HOR-GRA             TO WE-FECHA-OPERACION
+       MOVE CUMOPE-D-FOLIO             TO WE-FOLIO
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    END-IF
+    MOVE CUMOPE-D-FEC-CUMP             TO SALTER-D-FEC-CUM-F
+    IF CAMARA-D-ORDEN = "S"
+*OPERACION DE SALIDA
+       MOVE 1                          TO SALTER-D-IND-OPE
+    ELSE
+*OPERACION DE REGRESO
+       MOVE 2                          TO SALTER-D-IND-OPE
+    END-IF
+    PERFORM SQL-SALTER-INS THRU SQL-SALTER-INS-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL INSERTAR TBSALTER"   TO COLERR-DESCRIPCION
+       MOVE DETR-D-HOR-GRA             TO WE-FECHA-OPERACION
+       MOVE CUMOPE-D-FOLIO             TO WE-FOLIO
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO PROCESAR-OPERA-EXIT
+    ELSE
+       PERFORM SQL-SACTER-CAMPO-INI
+       MOVE SALTER-REG                 TO SACTER-REG
+       PERFORM SQL-SACTER-INS THRU SQL-SACTER-INS-EXIT
+       IF NOT SQL-SUCCESSFUL
+          MOVE "ERROR AL INSERTAR TBSACTER"   TO COLERR-DESCRIPCION
+          MOVE DETR-D-HOR-GRA             TO WE-FECHA-OPERACION
+          MOVE CUMOPE-D-FOLIO             TO WE-FOLIO
+          PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+          GO TO PROCESAR-OPERA-EXIT
+       ELSE
+          PERFORM SQL-CONTER-CAMPO-INI
+          MOVE    CAMARA-D-HOR-GRA    TO   CONTER-D-HOR-GRA
+          PERFORM SQL-CONTER-KEY   THRU   SQL-CONTER-KEY-EXIT
+          IF NOT SQL-SUCCESSFUL
+             MOVE    SALTER-REG           TO   CONTER-REG
+             MOVE    CAMARA-D-HOR-GRA     TO   CONTER-D-HOR-GRA
+             PERFORM SQL-CONTER-INS   THRU   SQL-CONTER-INS-EXIT
+             IF NOT SQL-SUCCESSFUL
+                MOVE "ERROR AL INSERTAR TBCONTER"   TO COLERR-DESCRIPCION
+                MOVE DETR-D-HOR-GRA             TO WE-FECHA-OPERACION
+                MOVE CUMOPE-D-FOLIO             TO WE-FOLIO
+                PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+                GO TO PROCESAR-OPERA-EXIT
+             END-IF
+          ELSE
+             MOVE    SALTER-REG           TO   CONTER-REG
+             MOVE    CAMARA-D-HOR-GRA     TO   CONTER-D-HOR-GRA
+             PERFORM SQL-CONTER-UPD   THRU   SQL-CONTER-UPD-EXIT
+             IF NOT SQL-SUCCESSFUL
+                MOVE "ERROR AL ACTUALIZAR TBCONTER"   TO COLERR-DESCRIPCION
+                MOVE DETR-D-HOR-GRA             TO WE-FECHA-OPERACION
+                MOVE CUMOPE-D-FOLIO             TO WE-FOLIO
+                PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+                GO TO PROCESAR-OPERA-EXIT
+             END-IF
+          END-IF
+       END-IF
+*
+       MOVE WS-CAMARA-ESTADO           TO CAMARA-D-ESTADO
+       PERFORM SQL-CAMARA-UPD THRU SQL-CAMARA-UPD-EXIT
+       IF NOT SQL-SUCCESSFUL
+          MOVE "ERROR AL ACTUALIZAR TBCAMARA" TO COLERR-DESCRIPCION
+          PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       END-IF
+       IF CAMARA-D-ORDEN = "S"
+          MOVE "UPD"                   TO CRCDYN-D-ACCION
+          PERFORM ENVIA-CRCDYN THRU ENVIA-CRCDYN-EXIT
+       END-IF
+       PERFORM GRABA-CAMLOG   THRU  GRABA-CAMLOG-FIN
+       PERFORM GRABA-AUDI     THRU  GRABA-AUDI-FIN
+    END-IF.
+*---------------------
+ PROCESAR-OPERA-EXIT.
+   EXIT.
+
+ GRABA-AUDI.
+*-------------
+  PERFORM SQL-AUDICA-CAMPO-INI
+  PERFORM SQL-TIMEST       THRU SQL-TIMEST-EXIT
+  MOVE SQL-TIMEST-EDIT     TO   AUDICA-D-HOR-EVE
+  MOVE ENVBUS-D-CODIGO     TO   AUDICA-D-IOPERA
+  MOVE CAMARA-D-FOLIO      TO   AUDICA-D-FOLIO
+  MOVE CAMLOG-D-ESTADO     TO   CAMCOD-D-COD-ESTADO
+  PERFORM SQL-CAMCOD-KEY   THRU SQL-CAMCOD-KEY-EXIT
+  MOVE CAMCOD-D-DES-ESTADO TO   AUDICA-D-EVENTO
+  PERFORM SQL-AUDICA-INS   THRU SQL-AUDICA-INS-EXIT.
+ GRABA-AUDI-FIN.
+*----------------
+   EXIT.
+ GRABA-CAMLOG.
+*-------------
+  PERFORM SQL-CAMLOG-CAMPO-INI
+  PERFORM SQL-TIMEST      THRU SQL-TIMEST-EXIT
+  MOVE SQL-TIMEST-EDIT    TO   CAMLOG-D-HOR-EVE
+  MOVE CAMARA-D-HOR-GRA   TO   CAMLOG-D-HOR-GRA
+  MOVE CAMARA-D-FOLIO     TO   CAMLOG-D-FOLIO
+  MOVE CAMARA-D-ESTADO    TO   CAMLOG-D-ESTADO
+                               CAMLOG-D-ESTADO-CAM
+  MOVE CAMLOG-D-ESTADO-CAM TO   CAMCOD-D-COD-ESTADO
+  PERFORM SQL-CAMCOD-KEY   THRU SQL-CAMCOD-KEY-EXIT
+  IF NOT SQL-SUCCESSFUL
+     MOVE " "              TO   CAMCOD-D-DES-ESTADO
+  END-IF
+  MOVE CAMCOD-D-DES-ESTADO TO   CAMLOG-D-DESCRIP
+  PERFORM SQL-CAMLOG-INS  THRU SQL-CAMLOG-INS-EXIT.
+ GRABA-CAMLOG-FIN.
+*----------------
+   EXIT.
+
+ GRABAR-QFCOLERR.
+*---------------
+  PERFORM SQL-TIMEST
+  MOVE SQL-TIMEST-EDIT             TO WS-COLERR-KEY
+  MOVE "SRENVTER"                  TO COLERR-SERVIDOR
+  MOVE SQLCODE                     TO COLERR-CODIGO
+  MOVE WE-FECHA-OPERACION          TO COLERR-VALOR
+  MOVE WE-FOLIO                    TO COLERR-FOLIO
+  MOVE WS-DATOS                    TO COLERR-D-DATA
+  MOVE COLERR-REG                  TO WS-COLERR-DATA
+  MOVE WS-COLERR-LONG              TO WK-QFILE-DATA-LONG
+  MOVE WS-COLERR                   TO WK-QFILE-DATA
+  MOVE WS-NUM-COLERR               TO WK-QFILE-NUMBER
+  PERFORM ESCRIBIR-QFILE     THRU ESCRIBIR-QFILE-EXIT
+  IF WK-QFILE-ERROR-NUM NOT = ZEROS
+     MOVE "INS"              TO MSGEDT-PAR-ALFA(2)
+     MOVE "INS-QFCOLERR...." TO MSGEDT-PAR-ALFA(3)
+     PERFORM INFORMA-ERROR-8005 THRU INFORMA-ERROR-8005-EXIT
+  END-IF.
+*---------------------------
+ GRABAR-QFCOLERR-EXIT.  EXIT.
+*
+ INFORMA-ERROR-8005.
+*-------------------
+     MOVE 8005                      TO  MSGEDT-CODMSG
+     MOVE SQLERR-EXTENDED-RESULT-SW TO  MSGEDT-PAR-NUM (1)
+     MOVE WX-SQL-TABLA              TO  MSGEDT-PAR-ALFA(1).
+*-------------------------------
+ INFORMA-ERROR-8005-EXIT.  EXIT.
+*
+
+*---------------
+  ENVIA-CRCDYN.
+*---------------
+   MOVE CAMARA-D-HOR-GRA     TO CRCDYN-D-HOR-GRA
+   PERFORM SQL-TIMEST
+   MOVE CRCDYN-REG           TO  WS-CRCDYN-DATA
+   MOVE SQL-TIMEST-EDIT      TO  WS-CRCDYN-KEY
+   MOVE WS-CRCDYN            TO  WK-QFILE-DATA
+   MOVE WS-CRCDYN-LONG       TO  WK-QFILE-DATA-LONG
+   MOVE WS-NUM-CRCDYN        TO  WK-QFILE-NUMBER
+   PERFORM ESCRIBIR-QFILE THRU ESCRIBIR-QFILE-EXIT
+   IF WK-QFILE-ERROR-NUM NOT = ZEROS
+     MOVE "ERROR AL INSERTAR EN QFANUOPE" TO COLERR-DESCRIPCION
+     PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+   END-IF.
+*------------------
+ ENVIA-CRCDYN-EXIT.
+*------------------
+   EXIT.
+*------------------
+ TIPO-DOC.
+*------------------
+    EVALUATE WS-TIPO-DOC
+*CEDULA
+       WHEN "C"
+          MOVE "CC"                    TO WS-TIPO-DOC-CAM
+*NIT
+       WHEN "N"
+          MOVE "NIT"                   TO WS-TIPO-DOC-CAM
+*NIP
+       WHEN "I"
+          MOVE "NIP"                   TO WS-TIPO-DOC-CAM
+*CEDULA DE EXTRAJERIA
+       WHEN "E"
+          MOVE "CE"                    TO WS-TIPO-DOC-CAM
+*PASAPORTE
+       WHEN "P"
+          MOVE "PS"                    TO WS-TIPO-DOC-CAM
+*PASAPORTE
+       WHEN "T"
+          MOVE "TI"                    TO WS-TIPO-DOC-CAM
+*OTROS
+       WHEN OTHER
+          MOVE WS-TIPO-DOC             TO WS-TIPO-DOC-CAM
+      END-EVALUATE.
+*------------------
+ TIPO-DOC-EXIT.
+*------------------
+ EXIT.
+*------------------
+ BUSCA-DEFR.
+*------------------
+    MOVE DETR-D-HOR-GRA                TO DEFR-D-HOR-GRA
+
+    MOVE  ZERO                         TO DEFR-D-SECUENCIA
+    PERFORM SQL-DEFR-KEY THRU SQL-DEFR-KEY-EXIT
+    IF NOT SQL-SUCCESSFUL
+       MOVE "ERROR AL LEER TBDEFR"     TO COLERR-DESCRIPCION
+       PERFORM GRABAR-QFCOLERR  THRU GRABAR-QFCOLERR-EXIT
+       GO                              TO BUSCA-DEFR-EXIT
+    END-IF.
+*------------------
+ BUSCA-DEFR-EXIT.
+*------------------
+ EXIT.
+
+*--------------------------------------
+?LIST
+? SOURCE =LMQFILE  (PD)
+? SOURCE =LBTIMESR (PD)
+? SOURCE =LBSQLERR (PD)
+? SOURCE =LBDETR   (KEY)
+? SOURCE =LBDEFR   (KEY)
+? SOURCE =LBDEFRAN (KEY)
+? SOURCE =LBDVLCOM (KEY)
+? SOURCE =LBCAMARA (KEY-CAMARA,UPD-CAMARA)
+? SOURCE =LBSALTER (KEY-SALTER,INS-SALTER)
+? SOURCE =LBCONTER (INI-CONTER,KEY-CONTER,INS-CONTER,UPD-CONTER)
+? SOURCE =LBSACTER (INI-SACTER,INS-SACTER)
+? SOURCE =LBCAMLOG (INI-CAMLOG,INS-CAMLOG)
+? SOURCE =LBCAMCOD (KEY-CAMCOD)
+? SOURCE =LBAUDICA (INI-AUDICA,INS-AUDICA)
+? SOURCE =LBCUMOPE (KEY)
+? SOURCE =LBUSU    (KEY)
+? SOURCE =LBCTSI   (KEY)
+? SOURCE =LBDEMI   (KEY)
