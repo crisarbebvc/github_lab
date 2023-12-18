@@ -13,6 +13,6 @@ jobs:
           with:
             server: ftpupload.net
             username: if0_35607821
-            password: ${{ secrets.PASSWORD }}
+            password: qAZxb6Nx9k8Rm
             server-dir: "/tandem/"
             local-dir: "./tandem"
