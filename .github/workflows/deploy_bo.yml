@@ -18,6 +18,11 @@ jobs:
                  echo "::set-output name=src::$(git diff --name-only --diff-filter=ACMRT | grep SR* | xargs)"
                  echo "::set-output name=dic::$(git diff --name-only --diff-filter=ACMRT | grep DI* | xargs)"
                  echo "::set-output name=lbr::$(git diff --name-only --diff-filter=ACMRT | grep LM* | xargs)"
+            - name: List changed files
+              run: |
+                 echo ${{changedfiles.outputs.src}}
+                 echo ${{changedfiles.outputs.dic}}
+                 echo ${{changedfiles.outputs.frm}}
     build:
         runs-on: ubuntu-latest
         needs: changedfiles
