@@ -11,8 +11,8 @@ jobs:
         - name: FTP Deployer
           uses: SamKirkland/FTP-Deploy-Action@v4.3.4
           with:
-            server: ${{ secrets.HOST_NAME }}
-            username: ${{ secrets.USER_NAME }}
-            password: ${{ secrets.PASSWORD }}
+            server: ${{ secrets.ftp.HOST_NAME }}
+            username: ${{ secrets.ftp.USER_NAME }}
+            password: ${{ secrets.ftp.PASSWORD }}
             server-dir: "/tandem/"
             local-dir: "./tandem"
