@@ -21,7 +21,7 @@ jobs:
                 done
     put_src:
         runs-on: ubuntu-latest
-        needs: changed_src
+        needs: changedfiles
         if: ${{needs.changedfiles.steps.changed_src.outputs.files}}
         steps:
         - name: Get Latest Code
