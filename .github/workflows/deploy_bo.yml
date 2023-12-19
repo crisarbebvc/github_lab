@@ -16,7 +16,7 @@ jobs:
               id: changed_src
               with:
                 patterns: |
-                   **/*/SR*
+                   tandem/src/SR*
     put_src:
         runs-on: ubuntu-latest
         needs: changedfiles
