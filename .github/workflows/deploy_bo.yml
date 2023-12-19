@@ -23,7 +23,6 @@ jobs:
                   echo "$file"
                 done
             - name: put_src
-              needs: changed_src
               if: ${{steps.changed_src.outputs.files}}
               uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
               with:
