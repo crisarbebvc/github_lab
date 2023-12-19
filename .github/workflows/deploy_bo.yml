@@ -1,16 +1,16 @@
-name: despliegue-bo
+name: despliegue-bo # Nombre del Workflow
 on:
     push:
-        branches: [ main ]
+        branches: [ main ] # El workflow se ejecutará cuando se realice un push a la rama main
 jobs:
-    changedfiles:
-        runs-on: ubuntu-latest
+    changedfiles: # Nombre del job
+        runs-on: ubuntu-latest # Los steps siguientes se ejecutarán sobre la ultima versión de Ubuntu
         steps:
-            - name: Get Latest Code
-              uses: actions/checkout@v3
-            - uses: yumemi-inc/changed-files@v3
-              id: changed_src
-              with:
+            - name: Get Latest Code # Nombre del primer step
+              uses: actions/checkout@v3 # Se realiza un checkuot del repositorio
+            - uses: yumemi-inc/changed-files@v3 # Este action se usará para extraer el nombre de los archivos modificados, agregados etc
+              id: changed_src # id del step
+              with: # Se agrega como parametro un patron para validar si hay archivos SR modificados
                 patterns: |
                     **/SR*
             - run: |
@@ -20,7 +20,7 @@ jobs:
                 done
             - uses: yumemi-inc/changed-files@v3
               id: changed_dic
-              with:
+              with: # Se agrega como parametro un patron para validar si hay archivos DI modificados
                 patterns: |
                     **/DI*
             - run: |
@@ -30,7 +30,7 @@ jobs:
                 done
             - uses: yumemi-inc/changed-files@v3
               id: changed_lbr
-              with:
+              with: # Se agrega como parametro un patron para validar si hay archivos LM modificados
                 patterns: |
                     **/LM*
             - run: |
@@ -38,9 +38,9 @@ jobs:
                   # do somethihg..
                   echo "$file"
                 done
-            - name: put_src
-              if: ${{steps.changed_src.outputs.files}}
-              uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
+            - name: put_src # Nombre del step para transferir archivos SR
+              if: ${{steps.changed_src.outputs.files}} # Si existen archivos modificados sigue el flujo de este step
+              uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1 # Action para transferir archivos via FTP
               with:
                 ftp_host: ${{ secrets.HOST_NAME }}
                 ftp_username: ${{ secrets.USER_NAME }}
@@ -48,9 +48,9 @@ jobs:
                 local_source_dir: "tandem/SRC"
                 dist_target_dir: "tandem/SRC"
                 delete: "false"
-            - name: put_dic
-              if: ${{steps.changed_dic.outputs.files}}
-              uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
+            - name: put_dic # Nombre del step para transferir archivos DI
+              if: ${{steps.changed_dic.outputs.files}} # Si existen archivos modificados sigue el flujo de este step
+              uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1 # Action para transferir archivos via FTP
               with:
                 ftp_host: ${{ secrets.HOST_NAME }}
                 ftp_username: ${{ secrets.USER_NAME }}
@@ -58,9 +58,9 @@ jobs:
                 local_source_dir: "tandem/DIC"
                 dist_target_dir: "tandem/DIC"
                 delete: "false"
-            - name: put_lbr
-              if: ${{steps.changed_lbr.outputs.files}}
-              uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1
+            - name: put_lbr # # Nombre del step para transferir archivos LM
+              if: ${{steps.changed_lbr.outputs.files}} # Si existen archivos modificados sigue el flujo de este step
+              uses: kevinpainchaud/simple-ftp-deploy-action@v1.2.1 # Action para transferir archivos via FTP
               with:
                 ftp_host: ${{ secrets.HOST_NAME }}
                 ftp_username: ${{ secrets.USER_NAME }}
