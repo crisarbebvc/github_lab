@@ -22,7 +22,7 @@ jobs:
     put_src:
         runs-on: ubuntu-latest
         needs: changed_src
-        if: ${{needs.changed_src.outputs.files}}
+        if: ${{needs.changedfiles.steps.changed_src.outputs.files}}
         steps:
         - name: Get Latest Code
           uses: actions/checkout@v3
