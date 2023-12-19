@@ -29,8 +29,8 @@ jobs:
                 ftp_host: ${{ secrets.HOST_NAME }}
                 ftp_username: ${{ secrets.USER_NAME }}
                 ftp_password: ${{ secrets.PASSWORD }}
-                local_source_dir: "tandem/src"
-                dist_target_dir: "tandem/src"
+                local_source_dir: "tandem/SRC"
+                dist_target_dir: "tandem/SRC"
                 delete: "false"
     put_dic:
         runs-on: ubuntu-latest
