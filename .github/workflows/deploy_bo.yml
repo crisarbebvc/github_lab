@@ -16,7 +16,7 @@ jobs:
               id: changed_src
               with:
                 patterns: |
-                    tandem/src/SR*
+                    **/SR*
             - run: |
                 for file in ${{ steps.changed_src.outputs.files }}; do
                   # do somethihg..
