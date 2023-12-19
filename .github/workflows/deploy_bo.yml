@@ -17,6 +17,11 @@ jobs:
               with:
                 patterns: |
                    tandem/src/SR*
+            - run: |
+                for file in ${{ steps.changed.outputs.files }}; do
+                  # do somethihg..
+                  echo "$file"
+                done
     put_src:
         runs-on: ubuntu-latest
         needs: changedfiles
