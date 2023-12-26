@@ -57,4 +57,4 @@ D COMPRA               C
 V IND-REINTENTO       X 01                                  ; indicador de reintento para el message process
 D NO-REINTENTO         N                                   ; No ha superado el numero de reintentos
 = SI-REINTENTO         S                                   ; supero el numero de reintentos
-
+** geanny prueba 3
